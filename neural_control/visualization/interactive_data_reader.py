@@ -39,7 +39,7 @@ class Interactive_Data_Reader(Tk):
         # String vars
         self.sModel = StringVar(self, " ")
         self.sTest = StringVar(self, " ")
-        self.dataPath = StringVar(self, os.path.abspath(log_path + "/"))
+        self.dataPath = StringVar(self, os.path.join(os.path.abspath(log_path + "/"), os.pardir, 'storage', 'simulation_data'))
         self.sVar = [StringVar(self, " ") for _ in range(self.nMaxLoadedVariables)]
         self.sKwargs = [StringVar(self, " ") for _ in range(self.nMaxLoadedVariables)]
         self.sAxis = [StringVar(self, " ") for _ in range(self.nMaxLoadedVariables)]
@@ -379,6 +379,7 @@ class Interactive_Data_Reader(Tk):
                 menu.add_command(label=string, command=lambda value=string: stringvar.set(value))
 
         path = self.dataPath.get()
+        
         # Models
         try:
             models = os.listdir(path)
@@ -726,6 +727,7 @@ class Interactive_Data_Reader(Tk):
 if __name__ == '__main__':
     # TODO create test
     log_path = os.path.abspath(os.path.dirname(os.path.abspath(__file__)))
+    
     gui = Interactive_Data_Reader(log_path, "2300x1200", (10, 10))
     # gui = Interactive_Data_Reader(log_path, "2600x500")
     gui.mainloop()

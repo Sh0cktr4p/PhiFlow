@@ -4,7 +4,7 @@ from typing import Any, Dict, List, Tuple
 import os
 
 from matplotlib.pyplot import contour
-from modules import ResBlocksFeaturesExtractor
+#from modules import ResBlocksFeaturesExtractor
 
 import torch
 import numpy as np
@@ -64,6 +64,7 @@ class TwoWayCouplingEnv(Env):
     ):
         self.device = device
         self.sim = TwoWayCouplingSimulation(device, translation_only)
+        print(f"Sim import path: {sim_import_path}")
         self.sim.set_initial_conditions(obs_width, obs_height, path=sim_import_path)
         self.dt = dt
         self.domain_size = domain_size
@@ -87,13 +88,14 @@ class TwoWayCouplingEnv(Env):
 
         self.n_steps = n_steps
         self.step_idx = 0
-        self.epis_idx = 0
+        self.epis_idx = -1
 
         self.pos_objective = None
         self.ang_objective = None
         self.forces = None
         self.torque = None
         self.pos_error = None
+        self.ang_error = None
         self.rew = None
         self.rew_baseline = np.array(0)
 
@@ -110,6 +112,7 @@ class TwoWayCouplingEnv(Env):
 
     def reset(self) -> np.ndarray:
         self.step_idx = 0
+        self.epis_idx += 1
         self.sim.setup_world(
             self.re, 
             self.domain_size, 
@@ -132,10 +135,9 @@ class TwoWayCouplingEnv(Env):
         forces, torque = self._split_action_to_force_torque(action)
         if self.translation_only:
             torque *= 0
-        self.forces = forces
+        self.forces = self._to_global(forces)
         self.torque = torque
-        global_forces = self._to_global(forces)
-        self.sim.apply_forces(global_forces * self.ref_vars['force'], torque * self.ref_vars['torque'])
+        self.sim.apply_forces(self.forces * self.ref_vars['force'], torque * self.ref_vars['torque'])
         self.sim.advect()
         self._make_incompressible()
         self.probes.update_transform(self.sim.obstacle.geometry.center.numpy(), -(self.sim.obstacle.geometry.angle.numpy() - math.PI / 2.0))
@@ -145,9 +147,6 @@ class TwoWayCouplingEnv(Env):
         done = self._obstacle_leaving_domain() or self.step_idx == self.n_steps
         self.rew = self._get_rew(loss, self.rew_baseline, done)
         info = {}
-
-        if done:
-            self.epis_idx += 1
 
         return obs, self.rew, done, info
 
@@ -169,7 +168,11 @@ class TwoWayCouplingEnv(Env):
         self.sim.reference_angle = self.ang_objective.detach().clone()
         self.sim.error_x = self.pos_error[0]
         self.sim.error_y = self.pos_error[1]
+        if not self.translation_only:
+            self.sim.error_ang = self.ang_error
         self.sim.reward = self.rew
+
+        #print("Episode %i step %i (%i)" % (self.epis_idx, self.step_idx // self.export_stride, self.step_idx))
         
         self.sim.export_data(
             self.sim_export_path, 
@@ -190,6 +193,8 @@ class TwoWayCouplingEnv(Env):
         return Box(-1, 1, shape=(3,), dtype=np.float32)
 
     def _get_observation_space(self) -> Box:
+        shape = self.reset().shape
+        self.epis_idx -= 1  # Account for reset function call
         return Box(-np.inf, np.inf, shape=self.reset().shape, dtype=np.float32)
 
     def _extract_inputs(self) -> Tuple[np.ndarray, np.ndarray]:
@@ -205,13 +210,15 @@ class TwoWayCouplingEnv(Env):
         pos_rew = -1 * np.sum(self.pos_error ** 2)
 
         rew = np.array(pos_rew) - baseline
-        if baseline != 0:
+        if baseline != 0 and False:
             rew = rew / np.abs(baseline)
         
         #print(np.sqrt(np.sum(self.pos_error ** 2)))
 
-        if np.sum(self.pos_error ** 2) < self.ref_vars['destination_zone_size'] ** 2:
+        if np.sum(self.pos_error ** 2) < 0.15 ** 2:
             rew += 9
+
+        rew = np.max([rew, -10])
 
         if not self.translation_only:
             self.ang_error = loss_inputs[4:5]
@@ -235,7 +242,7 @@ class TwoWayCouplingEnv(Env):
         return math.any(obstacle_center > self.domain_size) or math.any(obstacle_center < (0, 0))
 
     def _split_action_to_force_torque(self, action: np.ndarray) -> Tuple[torch.Tensor, torch.Tensor]:
-        control_effort = torch.tensor(action).to(self.device)
+        control_effort = torch.tensor(action).cuda()
         control_effort = torch.clamp(control_effort, -1, 1)
         return control_effort[:2], control_effort[-1:]
 
@@ -263,7 +270,7 @@ class TwoWayCouplingConfigEnv(TwoWayCouplingEnv):
             force=obs_mass * config.max_acc,
             torque=obs_inertia * config.max_ang_acc,
             time=obs_width / inflow_velocity,
-            destination_zone_size=domain_size - config.online['destination_margins'] * 2,
+            destination_zone_size=domain_size - config.online['destinations_margins'] * 2,
         )
 
         super().__init__(
@@ -271,12 +278,15 @@ class TwoWayCouplingConfigEnv(TwoWayCouplingEnv):
             n_steps=config.online['n_steps'],
             dt = config.simulation['dt'],
             domain_size=domain_size,
+            re=config.simulation['re'],
             obs_width=obs_width,
             obs_height=config.simulation['obs_height'],
             obs_xy=config.simulation['obs_xy'],
             obs_mass=obs_mass,
             obs_inertia=obs_inertia,
             translation_only=config.translation_only,
+            sponge_intensity=config.simulation['sponge_intensity'],
+            sponge_size=config.simulation['sponge_size'],
             inflow_velocity=inflow_velocity,
             probes_offset=config.probes_offset,
             probes_size=config.probes_size,
@@ -285,7 +295,7 @@ class TwoWayCouplingConfigEnv(TwoWayCouplingEnv):
             past_window=config.past_window,
             n_past_features=config.n_past_features,
             sim_import_path=config.online['simulation_path'],
-            sim_export_path=config.export_path,
+            sim_export_path=config.online['export_path'],
             export_vars=config.export_vars,
             export_stride=config.export_stride,
             ref_vars=ref_vars,
@@ -325,17 +335,17 @@ if __name__ == '__main__':
     #train_model('64_64_64_3e-4', 'hparams_tuning', 15000, batch_size=64, learning_starts=32, learning_rate=3e-4, policy_kwargs=dict(net_arch=[64, 64, 64]))
     #train_model('64_64_64_5e-4', 'hparams_tuning', 15000, batch_size=64, learning_starts=32, learning_rate=5e-4, policy_kwargs=dict(net_arch=[64, 64, 64]))
     #train_model('64_64_64_64_3e-4', 'hparams_tuning', 15000, batch_size=64, learning_starts=32, learning_rate=3e-4, policy_kwargs=dict(net_arch=[64, 64, 64, 64]))
-    train_model('64_64_64_64_5e-4_2grst_bs128', 'hparams_tuning', 15000, batch_size=128, learning_starts=32, learning_rate=5e-4, gradient_steps=2, policy_kwargs=dict(net_arch=[64, 64, 64, 64]))
-    train_model('64_64_64_64_2e-4_2grst_bs128', 'hparams_tuning', 15000, batch_size=128, learning_starts=32, learning_rate=2e-4, gradient_steps=2, policy_kwargs=dict(net_arch=[64, 64, 64, 64]))
-    train_model('128_128_128_3e-4_2grst_bs128', 'hparams_tuning', 15000, batch_size=128, learning_starts=32, learning_rate=3e-4, gradient_steps=2, policy_kwargs=dict(net_arch=[128, 128, 128]))
-    train_model('64_64_64_3e-4_2grst_bs128', 'hparams_tuning', 50000, batch_size=128, learning_starts=32, learning_rate=3e-4, gradient_steps=2, policy_kwargs=dict(net_arch=[64, 64, 64]))
+    #train_model('64_64_64_64_5e-4_2grst_bs128', 'hparams_tuning', 15000, batch_size=128, learning_starts=32, learning_rate=5e-4, gradient_steps=2, policy_kwargs=dict(net_arch=[64, 64, 64, 64]))
+    #train_model('64_64_64_64_2e-4_2grst_bs128', 'hparams_tuning', 15000, batch_size=128, learning_starts=32, learning_rate=2e-4, gradient_steps=2, policy_kwargs=dict(net_arch=[64, 64, 64, 64]))
+    #train_model('128_128_128_3e-4_2grst_bs128', 'hparams_tuning', 15000, batch_size=128, learning_starts=32, learning_rate=3e-4, gradient_steps=2, policy_kwargs=dict(net_arch=[128, 128, 128]))
+    train_model('128_128_128_3e-4_2grst_bs128_nonormdiv', 'hparams_tuning', 15000, batch_size=128, learning_starts=32, learning_rate=3e-4, gradient_steps=2, policy_kwargs=dict(net_arch=[128, 128, 128]))
     #train_model('128_128_3e-4', 'hparams_tuning', 15000, batch_size=64, learning_starts=32, learning_rate=3e-4, policy_kwargs=dict(net_arch=[128, 128]))
     #train_model('128_128_5e-4', 'hparams_tuning', 15000, batch_size=64, learning_starts=32, learning_rate=5e-4, policy_kwargs=dict(net_arch=[128, 128]))
     #train_model('128_128_128_3e-4', 'hparams_tuning', 15000, batch_size=64, learning_starts=32, learning_rate=3e-4, policy_kwargs=dict(net_arch=[128, 128, 128]))
     #train_model('128_128_128_5e-4', 'hparams_tuning', 15000, batch_size=64, learning_starts=32, learning_rate=5e-4, policy_kwargs=dict(net_arch=[128, 128, 128]))
     #train_model('256_256', 'hparams_tuning', 15000, batch_size=64, learning_starts=32, learning_rate=3e-4, policy_kwargs=dict(net_arch=[256, 256]))
     policy_kwargs = dict(
-        features_extractor_class=ResBlocksFeaturesExtractor,
+    #    features_extractor_class=ResBlocksFeaturesExtractor,
         features_extractor_kwargs=dict(
             features_dim=64,
             n_blocks=3,
@@ -343,6 +353,6 @@ if __name__ == '__main__':
         net_arch=[64, 64],
     )
 
-    train_model('3resbl64_64_64_5e-4_2grst_bs128', 'hparams_tuning', 30000, batch_size=128, learning_starts=32, learning_rate=5e-4, gradient_steps=2, policy_kwargs=policy_kwargs)
+    #train_model('3resbl64_64_64_5e-4_2grst_bs128', 'hparams_tuning', 30000, batch_size=128, learning_starts=32, learning_rate=5e-4, gradient_steps=2, policy_kwargs=policy_kwargs)
 
 

@@ -12,7 +12,7 @@ if __name__ == "__main__":
         "cfl",
         "fluid_force_x",
         "fluid_force_y",
-        "obs2_xy"
+        "obs_xy"
     ]
     simulation = TwoWayCouplingSimulation("GPU")
     inp = InputsManager(os.path.dirname(os.path.abspath(__file__)) + "/../inputs.json", 'simulation')
