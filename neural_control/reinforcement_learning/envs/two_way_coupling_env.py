@@ -2,6 +2,7 @@ import shutil
 import time
 from typing import Any, Dict, List, Tuple
 import os
+from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
 
 from matplotlib.pyplot import contour
 #from modules import ResBlocksFeaturesExtractor
@@ -139,12 +140,16 @@ class TwoWayCouplingEnv(Env):
         self.torque = torque
         self.sim.apply_forces(self.forces * self.ref_vars['force'], torque * self.ref_vars['torque'])
         self.sim.advect()
-        self._make_incompressible()
+        converged = self._make_incompressible()
         self.probes.update_transform(self.sim.obstacle.geometry.center.numpy(), -(self.sim.obstacle.geometry.angle.numpy() - math.PI / 2.0))
         self.sim.calculate_fluid_forces()
 
         obs, loss = self._extract_inputs()
-        done = self._obstacle_leaving_domain() or self.step_idx == self.n_steps
+        done = self._obstacle_leaving_domain() or self.step_idx == self.n_steps or not converged
+        if np.isnan(np.sum(obs)):
+            print('NaN value in observation!')
+            obs[np.isnan(obs)] = 0
+            done = True
         self.rew = self._get_rew(loss, self.rew_baseline, done)
         info = {}
 
@@ -209,16 +214,16 @@ class TwoWayCouplingEnv(Env):
 
         pos_rew = -1 * np.sum(self.pos_error ** 2)
 
-        rew = np.array(pos_rew) - baseline
-        if baseline != 0 and False:
+        ang_vel_rew = -np.abs(self.sim.obstacle.angular_velocity.numpy() * 10 / (self.ref_vars['torque'] * self.dt))
+
+        rew = np.array(pos_rew) - baseline + ang_vel_rew
+        if baseline != 0:
             rew = rew / np.abs(baseline)
-        
-        #print(np.sqrt(np.sum(self.pos_error ** 2)))
 
         if np.sum(self.pos_error ** 2) < 0.15 ** 2:
             rew += 9
 
-        rew = np.max([rew, -10])
+        rew = np.max([rew, -20])
 
         if not self.translation_only:
             self.ang_error = loss_inputs[4:5]
@@ -227,15 +232,13 @@ class TwoWayCouplingEnv(Env):
         return rew
         #return pos_rew * 30 + vel_rew if done else vel_rew
 
-    def _make_incompressible(self) -> None:
-        converged = False
-
-        while not converged:
-            try:
-                self.sim.make_incompressible()
-                converged = True
-            except AssertionError:
-                print('Assertion error in make_incompressible, probably non-converging pressure solver')
+    def _make_incompressible(self) -> bool:
+        try:
+            self.sim.make_incompressible()
+            return True
+        except AssertionError:
+            print('Assertion error in make_incompressible, probably non-converging pressure solver')
+            return False
 
     def _obstacle_leaving_domain(self) -> bool:
         obstacle_center = self.sim.obstacle.geometry.center
@@ -304,6 +307,7 @@ class TwoWayCouplingConfigEnv(TwoWayCouplingEnv):
 def get_env(skip: int=8, stack: int=4) -> Env:
     env = TwoWayCouplingConfigEnv("/home/felix/Code/HiWi/Brener/PhiFlow/neural_control/inputs.json")
     env = SkipStackWrapper(env, skip=skip, stack=stack)
+    env = RewNormWrapper(env, None)
     env.seed(0)
     return env
 
@@ -313,21 +317,20 @@ def train_model(name: str, log_dir: str, n_timesteps: int, **agent_kwargs) -> SA
 
     env = get_env()
 
-    
-    if os.path.exists(model_path):
+    print(model_path)
+    if os.path.exists(model_path + '.zip'):
         print('model path exists, loading model')
-        model = SAC.load(model_path)
+        model = SAC.load(model_path, env)
     else:
         print('creating new model...')
         model = SAC('MlpPolicy', env, tensorboard_log=tb_log_path, verbose=1, **agent_kwargs)
 
     def store_fn(_):
         print(f"Storing model to {model_path}...")
-        model.save(model_path)
+        model.save(model_path, include=['replay_buffer'])
         print("Stored model.")
 
-    model.learn(total_timesteps=n_timesteps, callback=EveryNRolloutsPlusStartFinishFunctionCallback(1000, store_fn), tb_log_name=name)
-
+    model.learn(total_timesteps=n_timesteps, callback=EveryNRolloutsPlusStartFinishFunctionCallback(10000, store_fn), tb_log_name=name)
 
 if __name__ == '__main__':
     import phi.torch.flow as phiflow
@@ -338,7 +341,8 @@ if __name__ == '__main__':
     #train_model('64_64_64_64_5e-4_2grst_bs128', 'hparams_tuning', 15000, batch_size=128, learning_starts=32, learning_rate=5e-4, gradient_steps=2, policy_kwargs=dict(net_arch=[64, 64, 64, 64]))
     #train_model('64_64_64_64_2e-4_2grst_bs128', 'hparams_tuning', 15000, batch_size=128, learning_starts=32, learning_rate=2e-4, gradient_steps=2, policy_kwargs=dict(net_arch=[64, 64, 64, 64]))
     #train_model('128_128_128_3e-4_2grst_bs128', 'hparams_tuning', 15000, batch_size=128, learning_starts=32, learning_rate=3e-4, gradient_steps=2, policy_kwargs=dict(net_arch=[128, 128, 128]))
-    train_model('128_128_128_3e-4_2grst_bs128_nonormdiv', 'hparams_tuning', 15000, batch_size=128, learning_starts=32, learning_rate=3e-4, gradient_steps=2, policy_kwargs=dict(net_arch=[128, 128, 128]))
+    train_model('128_128_128_3e-4_2grst_bs128_angvelpen_rewnorm_5', 'hparams_tuning', 50000, batch_size=128, learning_starts=32, learning_rate=3e-4, gradient_steps=2, policy_kwargs=dict(net_arch=[128, 128, 128]))
+    #train_model('delete', 'hparams_tuning', 15000, batch_size=128, learning_starts=32, learning_rate=3e-4, gradient_steps=2, policy_kwargs=dict(net_arch=[128, 128, 128]))
     #train_model('128_128_3e-4', 'hparams_tuning', 15000, batch_size=64, learning_starts=32, learning_rate=3e-4, policy_kwargs=dict(net_arch=[128, 128]))
     #train_model('128_128_5e-4', 'hparams_tuning', 15000, batch_size=64, learning_starts=32, learning_rate=5e-4, policy_kwargs=dict(net_arch=[128, 128]))
     #train_model('128_128_128_3e-4', 'hparams_tuning', 15000, batch_size=64, learning_starts=32, learning_rate=3e-4, policy_kwargs=dict(net_arch=[128, 128, 128]))

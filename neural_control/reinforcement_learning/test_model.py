@@ -23,12 +23,13 @@ def evaluate_model(model: SAC, env: Env):
 
 if __name__ == '__main__':
     config_path = "/home/felix/Code/HiWi/Brener/PhiFlow/neural_control/inputs.json"
-    model_path = "/home/felix/Code/HiWi/Brener/PhiFlow/neural_control/storage/networks/128_128_128_3e-4_2grst_bs128_nonormdiv"
+    model_path = "/home/felix/Code/HiWi/Brener/PhiFlow/neural_control/storage/networks/128_128_128_3e-4_2grst_bs128_angvelpen_rewnorm_3"
 
     print(f"loading model from {model_path}")
 
     env = TwoWayCouplingConfigEnv(config_path)
     env = SkipStackWrapper(env, skip=8, stack=4)
     model = SAC.load(model_path)
+    env.seed(0)
 
     evaluate_model(model, env)
