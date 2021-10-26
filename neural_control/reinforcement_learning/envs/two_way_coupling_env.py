@@ -63,7 +63,6 @@ class TwoWayCouplingEnv(Env):
         export_stride: int,
         ref_vars: dict,
     ):
-        self.device = device
         self.sim = TwoWayCouplingSimulation(device, translation_only)
         print(f"Sim import path: {sim_import_path}")
         self.sim.set_initial_conditions(obs_width, obs_height, path=sim_import_path)
@@ -124,8 +123,8 @@ class TwoWayCouplingEnv(Env):
             self.sponge_intensity,
             self.sponge_size
         )
-        self.pos_objective = (torch.rand(2) * torch.tensor([40, 20]) + torch.tensor([40, 20])).cuda()
-        self.ang_objective = (torch.rand(1) * 2 * math.PI - math.PI).cuda()
+        self.pos_objective = (torch.rand(2) * torch.tensor([40, 20]) + torch.tensor([40, 20])).to(self.sim.device)
+        self.ang_objective = (torch.rand(1) * 2 * math.PI - math.PI).to(self.sim.device)
         obs, loss = self._extract_inputs()
         self.rew_baseline = self._get_rew(loss, 0, False)
         print("pos objective: %s" % str(self.pos_objective))
@@ -143,7 +142,6 @@ class TwoWayCouplingEnv(Env):
         converged = self._make_incompressible()
         self.probes.update_transform(self.sim.obstacle.geometry.center.numpy(), -(self.sim.obstacle.geometry.angle.numpy() - math.PI / 2.0))
         self.sim.calculate_fluid_forces()
-
         obs, loss = self._extract_inputs()
         done = self._obstacle_leaving_domain() or self.step_idx == self.n_steps or not converged
         if np.isnan(np.sum(obs)):
@@ -236,8 +234,9 @@ class TwoWayCouplingEnv(Env):
         try:
             self.sim.make_incompressible()
             return True
-        except AssertionError:
+        except AssertionError as e:
             print('Assertion error in make_incompressible, probably non-converging pressure solver')
+            print(e)
             return False
 
     def _obstacle_leaving_domain(self) -> bool:
@@ -245,7 +244,7 @@ class TwoWayCouplingEnv(Env):
         return math.any(obstacle_center > self.domain_size) or math.any(obstacle_center < (0, 0))
 
     def _split_action_to_force_torque(self, action: np.ndarray) -> Tuple[torch.Tensor, torch.Tensor]:
-        control_effort = torch.tensor(action).cuda()
+        control_effort = torch.tensor(action).to(self.sim.device)
         control_effort = torch.clamp(control_effort, -1, 1)
         return control_effort[:2], control_effort[-1:]
 
@@ -305,15 +304,17 @@ class TwoWayCouplingConfigEnv(TwoWayCouplingEnv):
         )
 
 def get_env(skip: int=8, stack: int=4) -> Env:
-    env = TwoWayCouplingConfigEnv("/home/felix/Code/HiWi/Brener/PhiFlow/neural_control/inputs.json")
+    env = TwoWayCouplingConfigEnv("/home/trost/guided_research/PhiFlow/neural_control/inputs.json")
     env = SkipStackWrapper(env, skip=skip, stack=stack)
     env = RewNormWrapper(env, None)
     env.seed(0)
     return env
 
 def train_model(name: str, log_dir: str, n_timesteps: int, **agent_kwargs) -> SAC:
-    model_path = os.path.join("/home/felix/Code/HiWi/Brener/PhiFlow/neural_control/storage/networks", name)
-    tb_log_path = os.path.join("/home/felix/Code/HiWi/Brener/PhiFlow/neural_control/storage/tensorboard", log_dir)
+    storage_folder_path = "/home/trost/guided_research/PhiFlow/neural_control/storage/"
+
+    model_path = os.path.join(storage_folder_path, "networks", name)
+    tb_log_path = os.path.join(storage_folder_path, "tensorboard", log_dir)
 
     env = get_env()
 
@@ -327,36 +328,11 @@ def train_model(name: str, log_dir: str, n_timesteps: int, **agent_kwargs) -> SA
 
     def store_fn(_):
         print(f"Storing model to {model_path}...")
-        model.save(model_path, include=['replay_buffer'])
+        model.save(model_path)
         print("Stored model.")
 
     model.learn(total_timesteps=n_timesteps, callback=EveryNRolloutsPlusStartFinishFunctionCallback(10000, store_fn), tb_log_name=name)
 
 if __name__ == '__main__':
     import phi.torch.flow as phiflow
-    phiflow.TORCH_BACKEND.set_default_device("GPU")
-    #train_model('64_64_64_3e-4', 'hparams_tuning', 15000, batch_size=64, learning_starts=32, learning_rate=3e-4, policy_kwargs=dict(net_arch=[64, 64, 64]))
-    #train_model('64_64_64_5e-4', 'hparams_tuning', 15000, batch_size=64, learning_starts=32, learning_rate=5e-4, policy_kwargs=dict(net_arch=[64, 64, 64]))
-    #train_model('64_64_64_64_3e-4', 'hparams_tuning', 15000, batch_size=64, learning_starts=32, learning_rate=3e-4, policy_kwargs=dict(net_arch=[64, 64, 64, 64]))
-    #train_model('64_64_64_64_5e-4_2grst_bs128', 'hparams_tuning', 15000, batch_size=128, learning_starts=32, learning_rate=5e-4, gradient_steps=2, policy_kwargs=dict(net_arch=[64, 64, 64, 64]))
-    #train_model('64_64_64_64_2e-4_2grst_bs128', 'hparams_tuning', 15000, batch_size=128, learning_starts=32, learning_rate=2e-4, gradient_steps=2, policy_kwargs=dict(net_arch=[64, 64, 64, 64]))
-    #train_model('128_128_128_3e-4_2grst_bs128', 'hparams_tuning', 15000, batch_size=128, learning_starts=32, learning_rate=3e-4, gradient_steps=2, policy_kwargs=dict(net_arch=[128, 128, 128]))
-    train_model('128_128_128_3e-4_2grst_bs128_angvelpen_rewnorm_5', 'hparams_tuning', 50000, batch_size=128, learning_starts=32, learning_rate=3e-4, gradient_steps=2, policy_kwargs=dict(net_arch=[128, 128, 128]))
-    #train_model('delete', 'hparams_tuning', 15000, batch_size=128, learning_starts=32, learning_rate=3e-4, gradient_steps=2, policy_kwargs=dict(net_arch=[128, 128, 128]))
-    #train_model('128_128_3e-4', 'hparams_tuning', 15000, batch_size=64, learning_starts=32, learning_rate=3e-4, policy_kwargs=dict(net_arch=[128, 128]))
-    #train_model('128_128_5e-4', 'hparams_tuning', 15000, batch_size=64, learning_starts=32, learning_rate=5e-4, policy_kwargs=dict(net_arch=[128, 128]))
-    #train_model('128_128_128_3e-4', 'hparams_tuning', 15000, batch_size=64, learning_starts=32, learning_rate=3e-4, policy_kwargs=dict(net_arch=[128, 128, 128]))
-    #train_model('128_128_128_5e-4', 'hparams_tuning', 15000, batch_size=64, learning_starts=32, learning_rate=5e-4, policy_kwargs=dict(net_arch=[128, 128, 128]))
-    #train_model('256_256', 'hparams_tuning', 15000, batch_size=64, learning_starts=32, learning_rate=3e-4, policy_kwargs=dict(net_arch=[256, 256]))
-    policy_kwargs = dict(
-    #    features_extractor_class=ResBlocksFeaturesExtractor,
-        features_extractor_kwargs=dict(
-            features_dim=64,
-            n_blocks=3,
-        ),
-        net_arch=[64, 64],
-    )
-
-    #train_model('3resbl64_64_64_5e-4_2grst_bs128', 'hparams_tuning', 30000, batch_size=128, learning_starts=32, learning_rate=5e-4, gradient_steps=2, policy_kwargs=policy_kwargs)
-
-
+    train_model('128_128_128_3e-4_2grst_bs128_angvelpen_rewnorm_test', 'hparams_tuning', 20000, batch_size=128, learning_starts=32, learning_rate=3e-4, gradient_steps=2, policy_kwargs=dict(net_arch=[128, 128, 128]))
