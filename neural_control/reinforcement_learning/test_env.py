@@ -19,9 +19,11 @@ def test_env(env: Env):
             episode += 1
 
 if __name__ == '__main__':
-    config_path = "/home/felix/Code/HiWi/Brener/PhiFlow/neural_control/inputs.json"
+    config_path = "/home/trost/guided_research/PhiFlow/neural_control/inputs.json"
 
     env = TwoWayCouplingConfigEnv(config_path)
     env = SkipStackWrapper(env, skip=8, stack=4)
 
-    test_env(env)
+    print(env.observation_space.shape)
+
+    #test_env(env)
