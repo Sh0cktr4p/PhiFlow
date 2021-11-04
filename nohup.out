@@ -6108,3 +6108,705 @@ Wrapping the env in a DummyVecEnv.
  Only one obstacle in simulation
 pos objective: tensor([46.0506, 27.5919], device='cuda:0')
 Logging to /home/trost/guided_research/PhiFlow/neural_control/storage/tensorboard/hparams_tuning/32_24_16_3e-4_2grst_bs128_angvelpen_rewnorm_reduced_obs_1
+Storing model to /home/trost/guided_research/PhiFlow/neural_control/storage/networks/32_24_16_3e-4_2grst_bs128_angvelpen_rewnorm_reduced_obs...
+Stored model.
+
+ Only one obstacle in simulation
+pos objective: tensor([54.0384, 28.7737], device='cuda:0')
+
+ Only one obstacle in simulation
+pos objective: tensor([41.5968, 30.8548], device='cuda:0')
+
+ Only one obstacle in simulation
+pos objective: tensor([50.5188, 39.9099], device='cuda:0')
+Pressure did not converge. Trying again with different initial guess
+
+ Only one obstacle in simulation
+pos objective: tensor([73.7535, 33.4061], device='cuda:0')
+---------------------------------
+| rollout/           |          |
+|    ep_len_mean     | 57.5     |
+|    ep_rew_mean     | 665      |
+| time/              |          |
+|    episodes        | 4        |
+|    fps             | 0        |
+|    time_elapsed    | 582      |
+|    total_timesteps | 230      |
+| train/             |          |
+|    actor_loss      | 2.7      |
+|    critic_loss     | 1.53e+03 |
+|    ent_coef        | 0.891    |
+|    ent_coef_loss   | -0.48    |
+|    learning_rate   | 0.0003   |
+|    n_updates       | 394      |
+---------------------------------
+
+ Only one obstacle in simulation
+pos objective: tensor([57.3890, 31.0739], device='cuda:0')
+
+ Only one obstacle in simulation
+pos objective: tensor([66.4497, 35.5391], device='cuda:0')
+
+ Only one obstacle in simulation
+pos objective: tensor([45.3594, 25.9953], device='cuda:0')
+
+ Only one obstacle in simulation
+pos objective: tensor([76.7200, 23.0029], device='cuda:0')
+---------------------------------
+| rollout/           |          |
+|    ep_len_mean     | 49.1     |
+|    ep_rew_mean     | 178      |
+| time/              |          |
+|    episodes        | 8        |
+|    fps             | 0        |
+|    time_elapsed    | 984      |
+|    total_timesteps | 393      |
+| train/             |          |
+|    actor_loss      | -7.24    |
+|    critic_loss     | 2.47e+03 |
+|    ent_coef        | 0.828    |
+|    ent_coef_loss   | -0.496   |
+|    learning_rate   | 0.0003   |
+|    n_updates       | 720      |
+---------------------------------
+
+ Only one obstacle in simulation
+pos objective: tensor([67.1776, 29.9793], device='cuda:0')
+
+ Only one obstacle in simulation
+pos objective: tensor([67.0375, 36.3651], device='cuda:0')
+
+ Only one obstacle in simulation
+pos objective: tensor([78.5321, 37.9921], device='cuda:0')
+
+ Only one obstacle in simulation
+pos objective: tensor([66.5297, 32.6879], device='cuda:0')
+---------------------------------
+| rollout/           |          |
+|    ep_len_mean     | 46.6     |
+|    ep_rew_mean     | 369      |
+| time/              |          |
+|    episodes        | 12       |
+|    fps             | 0        |
+|    time_elapsed    | 1410     |
+|    total_timesteps | 559      |
+| train/             |          |
+|    actor_loss      | -31.4    |
+|    critic_loss     | 819      |
+|    ent_coef        | 0.78     |
+|    ent_coef_loss   | -0.581   |
+|    learning_rate   | 0.0003   |
+|    n_updates       | 1052     |
+---------------------------------
+
+ Only one obstacle in simulation
+pos objective: tensor([70.5656, 38.4439], device='cuda:0')
+Pressure did not converge. Trying again with different initial guess
+
+ Only one obstacle in simulation
+pos objective: tensor([54.6282, 39.0681], device='cuda:0')
+Pressure did not converge. Trying again with different initial guess
+
+ Only one obstacle in simulation
+pos objective: tensor([44.6531, 23.2949], device='cuda:0')
+
+ Only one obstacle in simulation
+pos objective: tensor([76.4495, 28.7174], device='cuda:0')
+---------------------------------
+| rollout/           |          |
+|    ep_len_mean     | 44.8     |
+|    ep_rew_mean     | 263      |
+| time/              |          |
+|    episodes        | 16       |
+|    fps             | 0        |
+|    time_elapsed    | 1818     |
+|    total_timesteps | 716      |
+| train/             |          |
+|    actor_loss      | -36.3    |
+|    critic_loss     | 1.62e+03 |
+|    ent_coef        | 0.738    |
+|    ent_coef_loss   | -0.635   |
+|    learning_rate   | 0.0003   |
+|    n_updates       | 1366     |
+---------------------------------
+Pressure did not converge. Trying again with different initial guess
+
+ Only one obstacle in simulation
+pos objective: tensor([68.9097, 21.5162], device='cuda:0')
+
+ Only one obstacle in simulation
+pos objective: tensor([45.8940, 26.5748], device='cuda:0')
+Pressure did not converge. Trying again with different initial guess
+
+ Only one obstacle in simulation
+pos objective: tensor([69.4894, 23.3091], device='cuda:0')
+
+ Only one obstacle in simulation
+pos objective: tensor([60.5455, 29.6757], device='cuda:0')
+---------------------------------
+| rollout/           |          |
+|    ep_len_mean     | 53.1     |
+|    ep_rew_mean     | 300      |
+| time/              |          |
+|    episodes        | 20       |
+|    fps             | 0        |
+|    time_elapsed    | 2663     |
+|    total_timesteps | 1062     |
+| train/             |          |
+|    actor_loss      | -53.5    |
+|    critic_loss     | 1.53e+03 |
+|    ent_coef        | 0.602    |
+|    ent_coef_loss   | -1.26    |
+|    learning_rate   | 0.0003   |
+|    n_updates       | 2058     |
+---------------------------------
+Pressure did not converge. Trying again with different initial guess
+
+ Only one obstacle in simulation
+pos objective: tensor([72.6359, 34.6366], device='cuda:0')
+Pressure did not converge. Trying again with different initial guess
+
+ Only one obstacle in simulation
+pos objective: tensor([79.2474, 29.7683], device='cuda:0')
+Pressure did not converge. Trying again with different initial guess
+
+ Only one obstacle in simulation
+pos objective: tensor([75.9354, 39.5903], device='cuda:0')
+Pressure did not converge. Trying again with different initial guess
+Pressure did not converge. Trying again with different initial guess
+
+ Only one obstacle in simulation
+pos objective: tensor([49.7796, 28.4381], device='cuda:0')
+---------------------------------
+| rollout/           |          |
+|    ep_len_mean     | 50.8     |
+|    ep_rew_mean     | 297      |
+| time/              |          |
+|    episodes        | 24       |
+|    fps             | 0        |
+|    time_elapsed    | 3089     |
+|    total_timesteps | 1220     |
+| train/             |          |
+|    actor_loss      | -81.8    |
+|    critic_loss     | 1.15e+03 |
+|    ent_coef        | 0.557    |
+|    ent_coef_loss   | -1.06    |
+|    learning_rate   | 0.0003   |
+|    n_updates       | 2374     |
+---------------------------------
+Pressure did not converge. Trying again with different initial guess
+
+ Only one obstacle in simulation
+pos objective: tensor([76.0944, 36.3336], device='cuda:0')
+
+ Only one obstacle in simulation
+pos objective: tensor([48.1649, 34.3613], device='cuda:0')
+
+ Only one obstacle in simulation
+pos objective: tensor([52.8947, 32.1483], device='cuda:0')
+
+ Only one obstacle in simulation
+pos objective: tensor([73.8454, 37.3475], device='cuda:0')
+---------------------------------
+| rollout/           |          |
+|    ep_len_mean     | 50.2     |
+|    ep_rew_mean     | 145      |
+| time/              |          |
+|    episodes        | 28       |
+|    fps             | 0        |
+|    time_elapsed    | 3554     |
+|    total_timesteps | 1406     |
+| train/             |          |
+|    actor_loss      | -62.1    |
+|    critic_loss     | 2.4e+03  |
+|    ent_coef        | 0.518    |
+|    ent_coef_loss   | -0.91    |
+|    learning_rate   | 0.0003   |
+|    n_updates       | 2746     |
+---------------------------------
+
+ Only one obstacle in simulation
+pos objective: tensor([41.2281, 27.6058], device='cuda:0')
+
+ Only one obstacle in simulation
+pos objective: tensor([50.5725, 29.3089], device='cuda:0')
+
+ Only one obstacle in simulation
+pos objective: tensor([79.8514, 27.5695], device='cuda:0')
+Pressure did not converge. Trying again with different initial guess
+
+ Only one obstacle in simulation
+pos objective: tensor([61.2393, 35.9297], device='cuda:0')
+---------------------------------
+| rollout/           |          |
+|    ep_len_mean     | 50.2     |
+|    ep_rew_mean     | 198      |
+| time/              |          |
+|    episodes        | 32       |
+|    fps             | 0        |
+|    time_elapsed    | 4026     |
+|    total_timesteps | 1607     |
+| train/             |          |
+|    actor_loss      | -55.5    |
+|    critic_loss     | 1.85e+03 |
+|    ent_coef        | 0.488    |
+|    ent_coef_loss   | -0.764   |
+|    learning_rate   | 0.0003   |
+|    n_updates       | 3148     |
+---------------------------------
+
+ Only one obstacle in simulation
+pos objective: tensor([74.7712, 24.8847], device='cuda:0')
+
+ Only one obstacle in simulation
+pos objective: tensor([55.9302, 23.3502], device='cuda:0')
+
+ Only one obstacle in simulation
+pos objective: tensor([72.4811, 27.4334], device='cuda:0')
+
+ Only one obstacle in simulation
+pos objective: tensor([45.0874, 37.1609], device='cuda:0')
+---------------------------------
+| rollout/           |          |
+|    ep_len_mean     | 51.8     |
+|    ep_rew_mean     | 242      |
+| time/              |          |
+|    episodes        | 36       |
+|    fps             | 0        |
+|    time_elapsed    | 4634     |
+|    total_timesteps | 1866     |
+| train/             |          |
+|    actor_loss      | -61.9    |
+|    critic_loss     | 2.7e+03  |
+|    ent_coef        | 0.455    |
+|    ent_coef_loss   | -0.395   |
+|    learning_rate   | 0.0003   |
+|    n_updates       | 3666     |
+---------------------------------
+
+ Only one obstacle in simulation
+pos objective: tensor([43.3586, 36.1100], device='cuda:0')
+Pressure did not converge. Trying again with different initial guess
+
+ Only one obstacle in simulation
+pos objective: tensor([65.6929, 25.0408], device='cuda:0')
+
+ Only one obstacle in simulation
+pos objective: tensor([71.0017, 33.4493], device='cuda:0')
+Pressure did not converge. Trying again with different initial guess
+
+ Only one obstacle in simulation
+pos objective: tensor([73.1644, 32.2786], device='cuda:0')
+---------------------------------
+| rollout/           |          |
+|    ep_len_mean     | 49.9     |
+|    ep_rew_mean     | 75.7     |
+| time/              |          |
+|    episodes        | 40       |
+|    fps             | 0        |
+|    time_elapsed    | 4944     |
+|    total_timesteps | 1995     |
+| train/             |          |
+|    actor_loss      | -50.6    |
+|    critic_loss     | 4.46e+03 |
+|    ent_coef        | 0.45     |
+|    ent_coef_loss   | -0.335   |
+|    learning_rate   | 0.0003   |
+|    n_updates       | 3924     |
+---------------------------------
+
+ Only one obstacle in simulation
+pos objective: tensor([70.3253, 35.1334], device='cuda:0')
+Pressure did not converge. Trying again with different initial guess
+
+ Only one obstacle in simulation
+pos objective: tensor([41.7930, 36.2200], device='cuda:0')
+
+ Only one obstacle in simulation
+pos objective: tensor([53.6656, 26.9478], device='cuda:0')
+
+ Only one obstacle in simulation
+pos objective: tensor([58.1175, 20.0971], device='cuda:0')
+---------------------------------
+| rollout/           |          |
+|    ep_len_mean     | 50.4     |
+|    ep_rew_mean     | 8.98     |
+| time/              |          |
+|    episodes        | 44       |
+|    fps             | 0        |
+|    time_elapsed    | 5537     |
+|    total_timesteps | 2216     |
+| train/             |          |
+|    actor_loss      | -48.8    |
+|    critic_loss     | 3.14e+03 |
+|    ent_coef        | 0.461    |
+|    ent_coef_loss   | -0.2     |
+|    learning_rate   | 0.0003   |
+|    n_updates       | 4366     |
+---------------------------------
+Pressure did not converge. Trying again with different initial guess
+
+ Only one obstacle in simulation
+pos objective: tensor([56.7305, 31.1111], device='cuda:0')
+
+ Only one obstacle in simulation
+pos objective: tensor([40.0762, 36.7406], device='cuda:0')
+
+ Only one obstacle in simulation
+pos objective: tensor([48.5813, 27.6840], device='cuda:0')
+Pressure did not converge. Trying again with different initial guess
+
+ Only one obstacle in simulation
+pos objective: tensor([76.4675, 27.7956], device='cuda:0')
+---------------------------------
+| rollout/           |          |
+|    ep_len_mean     | 48.3     |
+|    ep_rew_mean     | -6.08    |
+| time/              |          |
+|    episodes        | 48       |
+|    fps             | 0        |
+|    time_elapsed    | 5874     |
+|    total_timesteps | 2318     |
+| train/             |          |
+|    actor_loss      | -46.8    |
+|    critic_loss     | 2.29e+03 |
+|    ent_coef        | 0.466    |
+|    ent_coef_loss   | 0.207    |
+|    learning_rate   | 0.0003   |
+|    n_updates       | 4570     |
+---------------------------------
+Pressure did not converge. Trying again with different initial guess
+Pressure did not converge. Trying again with different initial guess
+
+ Only one obstacle in simulation
+pos objective: tensor([71.7385, 21.3662], device='cuda:0')
+Pressure did not converge. Trying again with different initial guess
+
+ Only one obstacle in simulation
+pos objective: tensor([72.4128, 24.0179], device='cuda:0')
+
+ Only one obstacle in simulation
+pos objective: tensor([61.0622, 25.9465], device='cuda:0')
+Pressure did not converge. Trying again with different initial guess
+
+ Only one obstacle in simulation
+pos objective: tensor([67.5310, 29.5551], device='cuda:0')
+---------------------------------
+| rollout/           |          |
+|    ep_len_mean     | 48.5     |
+|    ep_rew_mean     | 66.2     |
+| time/              |          |
+|    episodes        | 52       |
+|    fps             | 0        |
+|    time_elapsed    | 6552     |
+|    total_timesteps | 2523     |
+| train/             |          |
+|    actor_loss      | -41.2    |
+|    critic_loss     | 8.39e+03 |
+|    ent_coef        | 0.475    |
+|    ent_coef_loss   | 0.237    |
+|    learning_rate   | 0.0003   |
+|    n_updates       | 4980     |
+---------------------------------
+
+ Only one obstacle in simulation
+pos objective: tensor([62.8198, 29.4237], device='cuda:0')
+
+ Only one obstacle in simulation
+pos objective: tensor([61.4973, 29.5498], device='cuda:0')
+
+ Only one obstacle in simulation
+pos objective: tensor([59.3363, 28.8629], device='cuda:0')
+
+ Only one obstacle in simulation
+pos objective: tensor([40.8115, 31.5313], device='cuda:0')
+---------------------------------
+| rollout/           |          |
+|    ep_len_mean     | 47.2     |
+|    ep_rew_mean     | 96.6     |
+| time/              |          |
+|    episodes        | 56       |
+|    fps             | 0        |
+|    time_elapsed    | 6934     |
+|    total_timesteps | 2641     |
+| train/             |          |
+|    actor_loss      | -55.2    |
+|    critic_loss     | 3.32e+03 |
+|    ent_coef        | 0.478    |
+|    ent_coef_loss   | 0.326    |
+|    learning_rate   | 0.0003   |
+|    n_updates       | 5216     |
+---------------------------------
+
+ Only one obstacle in simulation
+pos objective: tensor([77.3926, 31.0370], device='cuda:0')
+
+ Only one obstacle in simulation
+pos objective: tensor([69.1680, 24.8335], device='cuda:0')
+
+ Only one obstacle in simulation
+pos objective: tensor([66.1542, 37.0199], device='cuda:0')
+
+ Only one obstacle in simulation
+pos objective: tensor([78.8486, 23.3714], device='cuda:0')
+---------------------------------
+| rollout/           |          |
+|    ep_len_mean     | 47.6     |
+|    ep_rew_mean     | 158      |
+| time/              |          |
+|    episodes        | 60       |
+|    fps             | 0        |
+|    time_elapsed    | 7568     |
+|    total_timesteps | 2856     |
+| train/             |          |
+|    actor_loss      | -56.3    |
+|    critic_loss     | 7.2e+03  |
+|    ent_coef        | 0.505    |
+|    ent_coef_loss   | -0.0194  |
+|    learning_rate   | 0.0003   |
+|    n_updates       | 5646     |
+---------------------------------
+
+ Only one obstacle in simulation
+pos objective: tensor([62.1602, 34.5677], device='cuda:0')
+
+ Only one obstacle in simulation
+pos objective: tensor([65.3556, 31.1382], device='cuda:0')
+Pressure did not converge. Trying again with different initial guess
+
+ Only one obstacle in simulation
+pos objective: tensor([52.3580, 27.9817], device='cuda:0')
+Pressure did not converge. Trying again with different initial guess
+
+ Only one obstacle in simulation
+pos objective: tensor([46.4240, 32.7388], device='cuda:0')
+---------------------------------
+| rollout/           |          |
+|    ep_len_mean     | 48.8     |
+|    ep_rew_mean     | 155      |
+| time/              |          |
+|    episodes        | 64       |
+|    fps             | 0        |
+|    time_elapsed    | 8290     |
+|    total_timesteps | 3122     |
+| train/             |          |
+|    actor_loss      | -45.1    |
+|    critic_loss     | 3.76e+03 |
+|    ent_coef        | 0.539    |
+|    ent_coef_loss   | 0.421    |
+|    learning_rate   | 0.0003   |
+|    n_updates       | 6178     |
+---------------------------------
+Pressure did not converge. Trying again with different initial guess
+
+ Only one obstacle in simulation
+pos objective: tensor([46.8045, 29.9048], device='cuda:0')
+Pressure did not converge. Trying again with different initial guess
+
+ Only one obstacle in simulation
+pos objective: tensor([79.2183, 21.4773], device='cuda:0')
+
+ Only one obstacle in simulation
+pos objective: tensor([55.2700, 27.0350], device='cuda:0')
+
+ Only one obstacle in simulation
+pos objective: tensor([46.8972, 32.0486], device='cuda:0')
+---------------------------------
+| rollout/           |          |
+|    ep_len_mean     | 48.3     |
+|    ep_rew_mean     | 54.6     |
+| time/              |          |
+|    episodes        | 68       |
+|    fps             | 0        |
+|    time_elapsed    | 8664     |
+|    total_timesteps | 3285     |
+| train/             |          |
+|    actor_loss      | -25.5    |
+|    critic_loss     | 6.33e+03 |
+|    ent_coef        | 0.569    |
+|    ent_coef_loss   | 0.331    |
+|    learning_rate   | 0.0003   |
+|    n_updates       | 6504     |
+---------------------------------
+
+ Only one obstacle in simulation
+pos objective: tensor([50.6136, 31.7382], device='cuda:0')
+
+ Only one obstacle in simulation
+pos objective: tensor([78.7178, 25.8529], device='cuda:0')
+Pressure did not converge. Trying again with different initial guess
+Pressure did not converge. Trying again with different initial guess
+
+ Only one obstacle in simulation
+pos objective: tensor([62.0748, 26.2023], device='cuda:0')
+Pressure did not converge. Trying again with different initial guess
+
+ Only one obstacle in simulation
+pos objective: tensor([75.5287, 28.2994], device='cuda:0')
+---------------------------------
+| rollout/           |          |
+|    ep_len_mean     | 49       |
+|    ep_rew_mean     | 27.9     |
+| time/              |          |
+|    episodes        | 72       |
+|    fps             | 0        |
+|    time_elapsed    | 9183     |
+|    total_timesteps | 3529     |
+| train/             |          |
+|    actor_loss      | -78.6    |
+|    critic_loss     | 2.87e+03 |
+|    ent_coef        | 0.574    |
+|    ent_coef_loss   | -0.174   |
+|    learning_rate   | 0.0003   |
+|    n_updates       | 6992     |
+---------------------------------
+
+ Only one obstacle in simulation
+pos objective: tensor([53.8818, 21.7605], device='cuda:0')
+
+ Only one obstacle in simulation
+pos objective: tensor([41.5003, 24.7669], device='cuda:0')
+
+ Only one obstacle in simulation
+pos objective: tensor([54.0654, 36.0111], device='cuda:0')
+
+ Only one obstacle in simulation
+pos objective: tensor([53.9002, 23.5142], device='cuda:0')
+---------------------------------
+| rollout/           |          |
+|    ep_len_mean     | 48.7     |
+|    ep_rew_mean     | -26.6    |
+| time/              |          |
+|    episodes        | 76       |
+|    fps             | 0        |
+|    time_elapsed    | 9532     |
+|    total_timesteps | 3700     |
+| train/             |          |
+|    actor_loss      | -53.5    |
+|    critic_loss     | 2.61e+03 |
+|    ent_coef        | 0.572    |
+|    ent_coef_loss   | 0.125    |
+|    learning_rate   | 0.0003   |
+|    n_updates       | 7334     |
+---------------------------------
+Pressure did not converge. Trying again with different initial guess
+
+ Only one obstacle in simulation
+pos objective: tensor([72.6164, 30.8932], device='cuda:0')
+
+ Only one obstacle in simulation
+pos objective: tensor([40.0064, 38.1208], device='cuda:0')
+
+ Only one obstacle in simulation
+pos objective: tensor([40.5227, 32.3443], device='cuda:0')
+
+ Only one obstacle in simulation
+pos objective: tensor([69.9319, 36.2006], device='cuda:0')
+---------------------------------
+| rollout/           |          |
+|    ep_len_mean     | 48.5     |
+|    ep_rew_mean     | -11.2    |
+| time/              |          |
+|    episodes        | 80       |
+|    fps             | 0        |
+|    time_elapsed    | 9933     |
+|    total_timesteps | 3876     |
+| train/             |          |
+|    actor_loss      | -27.3    |
+|    critic_loss     | 4.76e+03 |
+|    ent_coef        | 0.585    |
+|    ent_coef_loss   | 0.191    |
+|    learning_rate   | 0.0003   |
+|    n_updates       | 7686     |
+---------------------------------
+
+ Only one obstacle in simulation
+pos objective: tensor([66.6072, 27.9150], device='cuda:0')
+
+ Only one obstacle in simulation
+pos objective: tensor([60.9290, 31.8897], device='cuda:0')
+Pressure did not converge. Trying again with different initial guess
+
+ Only one obstacle in simulation
+pos objective: tensor([67.9035, 29.8499], device='cuda:0')
+Pressure did not converge. Trying again with different initial guess
+Pressure did not converge. Trying again with different initial guess
+
+ Only one obstacle in simulation
+pos objective: tensor([52.2395, 20.5537], device='cuda:0')
+---------------------------------
+| rollout/           |          |
+|    ep_len_mean     | 48.4     |
+|    ep_rew_mean     | 27.6     |
+| time/              |          |
+|    episodes        | 84       |
+|    fps             | 0        |
+|    time_elapsed    | 10405    |
+|    total_timesteps | 4068     |
+| train/             |          |
+|    actor_loss      | 16.1     |
+|    critic_loss     | 1.18e+04 |
+|    ent_coef        | 0.58     |
+|    ent_coef_loss   | 0.0689   |
+|    learning_rate   | 0.0003   |
+|    n_updates       | 8070     |
+---------------------------------
+
+ Only one obstacle in simulation
+pos objective: tensor([42.6880, 29.8952], device='cuda:0')
+
+ Only one obstacle in simulation
+pos objective: tensor([71.2397, 22.7554], device='cuda:0')
+
+ Only one obstacle in simulation
+pos objective: tensor([58.4778, 30.8720], device='cuda:0')
+
+ Only one obstacle in simulation
+pos objective: tensor([50.4233, 23.2094], device='cuda:0')
+---------------------------------
+| rollout/           |          |
+|    ep_len_mean     | 49       |
+|    ep_rew_mean     | 83.1     |
+| time/              |          |
+|    episodes        | 88       |
+|    fps             | 0        |
+|    time_elapsed    | 10954    |
+|    total_timesteps | 4313     |
+| train/             |          |
+|    actor_loss      | -42.4    |
+|    critic_loss     | 3.5e+03  |
+|    ent_coef        | 0.571    |
+|    ent_coef_loss   | -0.0369  |
+|    learning_rate   | 0.0003   |
+|    n_updates       | 8560     |
+---------------------------------
+
+ Only one obstacle in simulation
+pos objective: tensor([50.6078, 27.3505], device='cuda:0')
+Pressure did not converge. Trying again with different initial guess
+
+ Only one obstacle in simulation
+pos objective: tensor([70.4793, 27.9200], device='cuda:0')
+
+ Only one obstacle in simulation
+pos objective: tensor([46.6035, 36.3806], device='cuda:0')
+
+ Only one obstacle in simulation
+pos objective: tensor([58.3262, 33.0669], device='cuda:0')
+---------------------------------
+| rollout/           |          |
+|    ep_len_mean     | 48.9     |
+|    ep_rew_mean     | 64       |
+| time/              |          |
+|    episodes        | 92       |
+|    fps             | 0        |
+|    time_elapsed    | 11385    |
+|    total_timesteps | 4495     |
+| train/             |          |
+|    actor_loss      | -9.19    |
+|    critic_loss     | 7.29e+03 |
+|    ent_coef        | 0.587    |
+|    ent_coef_loss   | -0.0377  |
+|    learning_rate   | 0.0003   |
+|    n_updates       | 8924     |
+---------------------------------
