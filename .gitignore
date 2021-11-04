@@ -17,3 +17,4 @@ run_tests.sh
 wandb/
 myenv/
 build/
+nohup.out

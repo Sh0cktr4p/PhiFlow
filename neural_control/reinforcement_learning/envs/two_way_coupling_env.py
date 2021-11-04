@@ -255,6 +255,7 @@ class TwoWayCouplingEnv(Env):
 
 class TwoWayCouplingConfigEnv(TwoWayCouplingEnv):
     def __init__(self, config_path):
+        simulation_storage_path = os.path.join(os.path.dirname(__file__), os.pardir, os.pardir, 'storage', 'simulation_data')
         config = InputsManager(config_path)
         config.calculate_properties()
 
@@ -296,15 +297,16 @@ class TwoWayCouplingConfigEnv(TwoWayCouplingEnv):
             probes_n_columns=config.probes_n_columns,
             past_window=config.past_window,
             n_past_features=config.n_past_features,
-            sim_import_path=config.online['simulation_path'],
-            sim_export_path=config.online['export_path'],
+            sim_import_path=os.path.join(simulation_storage_path, config.online['simulation_path']),
+            sim_export_path=os.path.join(simulation_storage_path, config.online['export_path']),
             export_vars=config.export_vars,
             export_stride=config.export_stride,
             ref_vars=ref_vars,
         )
 
 def get_env(skip: int=8, stack: int=4) -> Env:
-    env = TwoWayCouplingConfigEnv("/home/trost/guided_research/PhiFlow/neural_control/inputs.json")
+    inputs_path = os.path.join(os.path.dirname(__file__), os.pardir, os.pardir, 'inputs.json')
+    env = TwoWayCouplingConfigEnv(inputs_path)
     env = SkipStackWrapper(env, skip=skip, stack=stack)
     env = RewNormWrapper(env, None)
     print(f"Observation space shape: {env.observation_space.shape}")
@@ -312,7 +314,7 @@ def get_env(skip: int=8, stack: int=4) -> Env:
     return env
 
 def train_model(name: str, log_dir: str, n_timesteps: int, **agent_kwargs) -> SAC:
-    storage_folder_path = "/home/trost/guided_research/PhiFlow/neural_control/storage/"
+    storage_folder_path = os.path.join(os.path.dirname(__file__), os.pardir, os.pardir, 'storage')
 
     model_path = os.path.join(storage_folder_path, "networks", name)
     tb_log_path = os.path.join(storage_folder_path, "tensorboard", log_dir)
