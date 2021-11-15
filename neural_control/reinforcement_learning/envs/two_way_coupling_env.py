@@ -13,7 +13,9 @@ from gym import Env
 from gym.spaces import Box
 from stable_baselines3.sac import SAC
 from stable_baselines3.ppo import PPO
+from stable_baselines3.common.monitor import Monitor
 from stable_baselines3.common.vec_env import DummyVecEnv
+from stable_baselines3.common.callbacks import CallbackList
 from phi import math
 
 from InputsManager import InputsManager
@@ -21,7 +23,8 @@ from misc.TwoWayCouplingSimulation import TwoWayCouplingSimulation
 from network.misc_funcs import calculate_loss, extract_inputs, Probes, prepare_export_folder, rotate
 from reinforcement_learning.envs.rew_norm_wrapper import RewNormWrapper
 from reinforcement_learning.envs.skip_stack_wrapper import SkipStackWrapper, FrameStack
-from reinforcement_learning.callbacks import EveryNRolloutsPlusStartFinishFunctionCallback
+from reinforcement_learning.envs.seed_on_reset_wrapper import SeedOnResetWrapper
+from reinforcement_learning.callbacks import EveryNRolloutsPlusStartFinishFunctionCallback, RecordInfoScalarsCallback
 
 
 def profile(fn):
@@ -306,13 +309,15 @@ class TwoWayCouplingConfigEnv(TwoWayCouplingEnv):
 
 def get_env(skip: int=8, stack: int=4) -> Env:
     inputs_path = os.path.join(os.path.dirname(__file__), os.pardir, os.pardir, 'inputs.json')
+    
     env = TwoWayCouplingConfigEnv(inputs_path)
     env = SkipStackWrapper(env, skip=skip, stack=stack)
     env = RewNormWrapper(env, None)
-    print(f"Observation space shape: {env.observation_space.shape}")
-    env.seed(0)
+    env = SeedOnResetWrapper(env)
+    env = Monitor(env, info_keywords=('rew_unnormalized',))
+        
     return env
-
+    
 def train_model(name: str, log_dir: str, n_timesteps: int, **agent_kwargs) -> SAC:
     storage_folder_path = os.path.join(os.path.dirname(__file__), os.pardir, os.pardir, 'storage')
 
@@ -334,9 +339,17 @@ def train_model(name: str, log_dir: str, n_timesteps: int, **agent_kwargs) -> SA
         model.save(model_path)
         print("Stored model.")
 
-    model.learn(total_timesteps=n_timesteps, callback=EveryNRolloutsPlusStartFinishFunctionCallback(10000, store_fn), tb_log_name=name)
+    callback = CallbackList([
+        EveryNRolloutsPlusStartFinishFunctionCallback(20000, store_fn),
+        RecordInfoScalarsCallback('rew_unnormalized'),
+    ])
+
+    model.learn(total_timesteps=n_timesteps, callback=callback, tb_log_name=name)
 
 if __name__ == '__main__':
-    import phi.torch.flow as phiflow
     #train_model('128_128_128_3e-4_2grst_bs128_angvelpen_rewnorm_test', 'hparams_tuning', 20000, batch_size=128, learning_starts=32, learning_rate=3e-4, gradient_steps=2, policy_kwargs=dict(net_arch=[128, 128, 128]))
+<<<<<<< HEAD
     train_model('32_24_16_3e-4_2grst_bs128_angvelpen_rewnorm_smallobs', 'obs_tests', 20000, batch_size=128, learning_starts=32, learning_rate=3e-4, gradient_steps=2, policy_kwargs=dict(net_arch=[32, 24, 16]))
+=======
+    train_model('32_24_16_3e-4_2grst_bs128_angvelpen_rewnorm_full_obs_seeded_3', 'hparams_tuning', 60000, batch_size=128, learning_starts=32, learning_rate=3e-4, gradient_steps=2, policy_kwargs=dict(net_arch=[32, 24, 16]))
+>>>>>>> 5b6cebb7daeca6d1d6a624f701bda09cd706169c

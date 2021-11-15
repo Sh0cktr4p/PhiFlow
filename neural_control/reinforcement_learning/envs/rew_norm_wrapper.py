@@ -22,9 +22,7 @@ class RewNormWrapper(Wrapper):
         self.unnormalized_ep_rew += rew
 
         if done:
-            if 'episode' not in info:
-                info['episode'] = {}
-            info['episode']['rew_unnormalized'] = self.unnormalized_ep_rew
+            info['rew_unnormalized'] = self.unnormalized_ep_rew
         
         return obs, self.reward(rew), done, info
 
