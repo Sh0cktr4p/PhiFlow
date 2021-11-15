@@ -1,4 +1,5 @@
 from stable_baselines3.common.callbacks import BaseCallback, EventCallback, EveryNTimesteps
+from stable_baselines3.common.utils import safe_mean
 from stable_baselines3.common import logger
 import time
 import numpy as np
@@ -25,6 +26,7 @@ class EveryNRolloutsPlusStartFinishFunctionCallback(EveryNRolloutsFunctionCallba
 
     def _on_training_end(self):
         self._on_event()
+
 
 class EveryNTimestepsFunctionCallback(EveryNTimesteps):
     def __init__(self, n_steps, callback_fn):
@@ -81,3 +83,18 @@ class TimeConsumptionMonitorCallback(BaseCallback):
         logger.record("rollout collection time average", avg_fwd_time)
         logger.record("learning time average", avg_bwd_time)
         logger.record("ratio collection to learning", fwd_to_bwd_ratio)
+
+
+class RecordInfoScalarsCallback(BaseCallback):
+    def __init__(self, *scalar_names):
+        self.scalar_names = scalar_names
+        super().__init__()
+
+    def _on_step(self) -> bool:
+        return True
+
+    def _on_rollout_end(self) -> None:
+        if len(self.model.ep_info_buffer) > 0 and len(self.model.ep_info_buffer[0]) > 0:
+            for scalar_name in self.scalar_names:
+                scalar_value = safe_mean([ep_info[scalar_name] for ep_info in self.model.ep_info_buffer])
+                self.logger.record("rollout/" + scalar_name, scalar_value)
