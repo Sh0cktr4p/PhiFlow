@@ -1,6 +1,6 @@
 {
     "dataPath": "/home/felix/Code/HiWi/Brener/PhiFlow/neural_control/storage/simulation_data",
-    "sModel": "best_shot",
+    "sModel": "full_obs_long",
     "sVar": [
         "obs_mask",
         "vx",

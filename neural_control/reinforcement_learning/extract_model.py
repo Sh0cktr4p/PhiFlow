@@ -1,34 +1,48 @@
-from stable_baselines3.sac import SAC
 import torch
 
-class SACPolicyModule(torch.nn.Module):
-    '''
-    :param agent_path: the path from where to load the reinforcement learning agent
-    '''
-    def __init__(self, agent_path):
+
+class SACActorModule(torch.nn.Module):
+    def __init__(self, latent_pi: torch.nn.Module, mu: torch.nn.Module, low: float, high: float, obs_shape: tuple):
         super().__init__()
-        agent = SAC.load(agent_path)
 
-        self.actor = agent.policy.actor
-        self.obs_shape = agent.observation_space.shape
+        self.features_extractor = torch.nn.Flatten()
+        self.latent_pi = latent_pi
+        self.mu = mu
+        self.register_buffer('action_space_low', torch.tensor(low))
+        self.register_buffer('action_space_high', torch.tensor(high))
+        self.obs_shape = obs_shape
 
-    '''
-    :param obs: pytorch tensor of shape (N, 164)
-    '''
     def forward(self, obs: torch.Tensor) -> torch.Tensor:
-        return self.actor(obs, deterministic=True)
+        return self.rescale(self.mu(self.latent_pi(self.features_extractor(obs))))
+
+    def rescale(self, x: torch.Tensor) -> torch.Tensor:
+        return self.action_space_low + (0.5 * (torch.tanh(x) + 1.0) * (self.action_space_high - self.action_space_low))
+
+
+def store_sac_actor_as_torch_module(agent_path: str, target_path: str):
+    from stable_baselines3.sac import SAC
+
+    sb_agent = SAC.load(agent_path)
+    sb_actor = sb_agent.policy.actor.cpu()
+
+    th_actor = SACActorModule(sb_actor.latent_pi, sb_actor.mu, sb_agent.action_space.low, sb_agent.action_space.high, sb_agent.observation_space.shape)
+    torch.save(th_actor, target_path)
+
+
+def load_sac_torch_module(path: str) -> SACActorModule:
+    return torch.load(path)
 
 
 if __name__ == '__main__':
+    store_sac_actor_as_torch_module('neural_control/storage/networks/32_24_16_3e-4_2grst_bs128_angvelpen_rewnorm_full_obs', '../../../Test/PythonStuff/rl_model.pkl')
+    exit()
     from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
 
     parser = ArgumentParser(formatter_class=ArgumentDefaultsHelpFormatter)
     parser.add_argument('--path', type=str)
-    parser.add_argument('--device', type=str, default='cpu')
     args = parser.parse_args()
 
-    policy = SACPolicyModule(args.path).to(args.device)
-    n = 1 # Batch dimension
-    obs = torch.zeros(n, *policy.obs_shape).to(args.device)
-    print(policy(obs))
-    print("Model has %i parameters" % sum(p.numel() for p in policy.parameters()))
+    model = load_sac_torch_module(args.path).cuda()
+
+    obs = torch.zeros(1, *model.obs_shape).cuda()
+    print(model(obs))

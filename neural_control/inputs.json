@@ -13,8 +13,8 @@
     "probes_offset": 2,
     "probes_size": 4,
     "online": {
-        "simulation_path": "simple_simulation", 
-        "export_path": "test",
+        "simulation_path": "simple_simulation/", 
+        "export_path": "full_obs_long/",
         "destinations_zone_growrate": 0.05,
         "n_steps": 1000,
         "n_cases": 100,

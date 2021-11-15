@@ -60,14 +60,14 @@ def extract_inputs(sim: TwoWayCouplingSimulation, probes: Probes, x_objective: t
     # Transfer values to box local reference frame
     negative_angle = (sim.obstacle.geometry.angle - math.PI / 2.0).native()
     # negative_angle = torch.tensor(0)
-    probes_velocity = rotate(probes_velocity, negative_angle) * 0 # TODO
+    probes_velocity = rotate(probes_velocity, negative_angle) # TODO
     error_xy = rotate(error_xy, negative_angle)
-    fluid_force = rotate(fluid_force, negative_angle) * 0 # TODO
+    fluid_force = rotate(fluid_force, negative_angle) # TODO
     obs_velocity = rotate(obs_velocity, negative_angle)
 
     model_inputs = [
-        #probes_velocity[0] / ref_vars['velocity'],
-        #probes_velocity[1] / ref_vars['velocity'],
+        probes_velocity[0] / ref_vars['velocity'],
+        probes_velocity[1] / ref_vars['velocity'],
         obs_velocity / ref_vars['velocity'],
         error_xy / ref_vars['length'],
         fluid_force / ref_vars['force'],
