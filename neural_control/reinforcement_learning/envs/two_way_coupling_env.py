@@ -287,7 +287,7 @@ class TwoWayCouplingConfigEnv(TwoWayCouplingEnv):
 
         super().__init__(
             device=config.device,
-            n_steps=config.online['n_steps'],
+            n_steps=config.online['n_timesteps'],
             dt = config.simulation['dt'],
             domain_size=domain_size,
             re=config.simulation['re'],
