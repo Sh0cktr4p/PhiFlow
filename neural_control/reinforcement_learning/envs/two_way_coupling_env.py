@@ -2,9 +2,9 @@ import shutil
 import time
 from typing import Any, Dict, List, Tuple
 import os
-from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
+#from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
 
-from matplotlib.pyplot import contour
+#from matplotlib.pyplot import contour
 #from modules import ResBlocksFeaturesExtractor
 
 import torch
@@ -12,17 +12,17 @@ import numpy as np
 from gym import Env
 from gym.spaces import Box
 from stable_baselines3.sac import SAC
-from stable_baselines3.ppo import PPO
+#from stable_baselines3.ppo import PPO
 from stable_baselines3.common.monitor import Monitor
-from stable_baselines3.common.vec_env import DummyVecEnv
+#from stable_baselines3.common.vec_env import DummyVecEnv
 from stable_baselines3.common.callbacks import CallbackList
 from phi import math
 
 from InputsManager import InputsManager
 from misc.TwoWayCouplingSimulation import TwoWayCouplingSimulation
-from network.misc_funcs import calculate_loss, extract_inputs, Probes, prepare_export_folder, rotate
+from network.misc_funcs import extract_inputs, Probes, prepare_export_folder, rotate
 from reinforcement_learning.envs.rew_norm_wrapper import RewNormWrapper
-from reinforcement_learning.envs.skip_stack_wrapper import SkipStackWrapper, FrameStack
+from reinforcement_learning.envs.skip_stack_wrapper import SkipStackWrapper
 from reinforcement_learning.envs.seed_on_reset_wrapper import SeedOnResetWrapper
 from reinforcement_learning.callbacks import EveryNRolloutsPlusStartFinishFunctionCallback, RecordInfoScalarsCallback
 
@@ -147,10 +147,16 @@ class TwoWayCouplingEnv(Env):
         self.sim.calculate_fluid_forces()
         obs, loss = self._extract_inputs()
         done = self._obstacle_leaving_domain() or self.step_idx == self.n_steps or not converged
+
         if np.isnan(np.sum(obs)):
             print('NaN value in observation!')
             obs[np.isnan(obs)] = 0
             done = True
+
+        if np.abs(self.sim.angular_velocity.numpy()) > self.ref_vars['max_ang_vel']:
+            print('Hit maximum angular velocity, ending trajectory')
+            done = True
+
         self.rew = self._get_rew(loss, self.rew_baseline, done)
         info = {}
 
@@ -215,7 +221,7 @@ class TwoWayCouplingEnv(Env):
 
         pos_rew = -1 * np.sum(self.pos_error ** 2)
 
-        ang_vel_rew = -np.abs(self.sim.obstacle.angular_velocity.numpy() * 10 / (self.ref_vars['torque'] * self.dt))
+        ang_vel_rew = -10 * (self.sim.obstacle.angular_velocity.numpy() / self.ref_vars['max_ang_vel']) ** 2
 
         rew = np.array(pos_rew) - baseline + ang_vel_rew
         if baseline != 0:
@@ -224,23 +230,22 @@ class TwoWayCouplingEnv(Env):
         if np.sum(self.pos_error ** 2) < 0.15 ** 2:
             rew += 9
 
-        rew = np.max([rew, -20])
+        rew = np.max([rew, -30])
 
         if not self.translation_only:
             self.ang_error = loss_inputs[4:5]
             # TODO calculate angular reward and add to output
 
         return rew
-        #return pos_rew * 30 + vel_rew if done else vel_rew
 
     def _make_incompressible(self) -> bool:
-        try:
-            self.sim.make_incompressible()
-            return True
-        except AssertionError as e:
-            print('Assertion error in make_incompressible, probably non-converging pressure solver')
-            print(e)
-            return False
+        self.sim.make_incompressible()
+        return True
+        #try:
+        #except AssertionError as e:
+        #    print('Assertion error in make_incompressible, probably non-converging pressure solver')
+        #    print(e)
+        #    return False
 
     def _obstacle_leaving_domain(self) -> bool:
         obstacle_center = self.sim.obstacle.geometry.center
@@ -277,6 +282,7 @@ class TwoWayCouplingConfigEnv(TwoWayCouplingEnv):
             torque=obs_inertia * config.max_ang_acc,
             time=obs_width / inflow_velocity,
             destination_zone_size=domain_size - config.online['destinations_margins'] * 2,
+            max_ang_vel=config.max_ang_vel,
         )
 
         super().__init__(
