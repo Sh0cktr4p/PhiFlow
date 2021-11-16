@@ -91,9 +91,14 @@ class MaxAndSkipEnv(Wrapper):
             total_reward += reward
             if done:
                 break
-        max_frame = np.max(np.stack(self._obs_buffer), axis=0)
+        frames = np.stack(self._obs_buffer)
+        #max_frame = np.max(frames, axis=0)
+        min_val = frames.min(axis=0)
+        max_val = frames.max(axis=0)
+        abs_max_frame = np.where(-min_val > max_val, min_val, max_val)
 
-        return max_frame, total_reward, done, acc_info
+
+        return abs_max_frame, total_reward, done, acc_info
 
     def reset(self):
         """Clear past frame buffer and init. to first obs. from inner env."""

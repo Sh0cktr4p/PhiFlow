@@ -7,6 +7,7 @@
     "learning_rate_decay_half_life": 50,
     "max_acc": 0.25,
     "max_ang_acc": 0.002,
+    "max_ang_vel": 0.75,
     "device": "GPU",
     "probes_n_rows": 2,
     "probes_n_columns": 3,
