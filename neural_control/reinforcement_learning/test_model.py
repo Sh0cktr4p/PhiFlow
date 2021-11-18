@@ -1,4 +1,5 @@
 from gym import Env
+from reinforcement_learning.envs.seed_on_reset_wrapper import SeedOnResetWrapper
 from reinforcement_learning.envs.skip_stack_wrapper import SkipStackWrapper
 from reinforcement_learning.envs.two_way_coupling_env import TwoWayCouplingConfigEnv
 from stable_baselines3.sac import SAC
@@ -9,11 +10,10 @@ def evaluate_model(model: SAC, env: Env):
 
     episode = 0
 
-    while episode < 20:
+    while episode < 5:
         step = 0
         cum_rew = 0
         done = False
-        env.seed(0)
         obs = env.reset()
 
         while not done:
@@ -35,7 +35,7 @@ if __name__ == '__main__':
 
     env = TwoWayCouplingConfigEnv(config_path)
     env = SkipStackWrapper(env, skip=8, stack=4)
+    env = SeedOnResetWrapper(env, 1)
     model = SAC.load(model_path)
-    env.seed(0)
 
     evaluate_model(model, env)

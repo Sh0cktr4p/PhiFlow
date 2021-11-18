@@ -6,7 +6,7 @@
     "export_stride": 8,
     "learning_rate_decay_half_life": 50,
     "max_acc": 0.25,
-    "max_ang_acc": 0.002,
+    "max_ang_acc": 0.025,
     "max_ang_vel": 0.75,
     "device": "GPU",
     "probes_n_rows": 2,
@@ -14,8 +14,8 @@
     "probes_offset": 4,
     "probes_size": 4,
     "online": {
-        "simulation_path": "simple_simulation/", 
-        "export_path": "full_obs_long/",
+        "simulation_path": "simple_simulation_2/", 
+        "export_path": "new_scenario/",
         "destinations_zone_growrate": 0.33,
         "n_timesteps": 1000,
         "simulation_dropout": 1.0,
@@ -63,8 +63,8 @@
         }
     },
     "simulation": {
-        "path": "/home/trost/guided_research/PhiFlow/neural_control/storage/simulation_data/simple_simulation",
-        "n_steps": 8000,
+        "path": "/home/felix/Code/HiWi/Brener/PhiFlow/neural_control/storage/simulation_data/simple_simulation_2",
+        "n_steps": 101,
         "re": 1000,
         "tripping_on": false,
         "obs_density": 1.5,
