@@ -29,13 +29,13 @@ def evaluate_model(model: SAC, env: Env):
 
 if __name__ == '__main__':
     config_path = os.path.join(os.path.dirname(__file__), os.pardir, 'inputs.json')
-    model_path = os.path.join(os.path.dirname(__file__), os.pardir, 'storage', 'networks', '32_24_16_3e-4_2grst_bs128_angvelpen_rewnorm_full_obs_long')
+    model_path = os.path.join(os.path.dirname(__file__), os.pardir, 'storage', 'networks', 'simple_env_norewnorm_2')
 
     print(f"loading model from {model_path}")
 
     env = TwoWayCouplingConfigEnv(config_path)
     env = SkipStackWrapper(env, skip=8, stack=4)
-    env = SeedOnResetWrapper(env, 1)
+    env = SeedOnResetWrapper(env, 1000)
     model = SAC.load(model_path)
 
     evaluate_model(model, env)

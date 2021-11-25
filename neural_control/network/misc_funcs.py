@@ -65,11 +65,11 @@ def extract_inputs(sim: TwoWayCouplingSimulation, probes: Probes, x_objective: t
         fluid_force = rotate(fluid_force, negative_angle)
         obs_velocity = rotate(obs_velocity, negative_angle)
     model_inputs = [
-         probes_velocity[0] / ref_vars['velocity'], # TODO
-         probes_velocity[1] / ref_vars['velocity'], # TODO
+        # probes_velocity[0] / ref_vars['velocity'], # TODO
+        # probes_velocity[1] / ref_vars['velocity'], # TODO
         obs_velocity / ref_vars['velocity'],
         error_xy / ref_vars['length'],
-         fluid_force / ref_vars['force'], # TODO
+        # fluid_force / ref_vars['force'], # TODO
     ]
     loss_inputs = [
         error_xy / ref_vars['length'],
@@ -79,7 +79,7 @@ def extract_inputs(sim: TwoWayCouplingSimulation, probes: Probes, x_objective: t
         ang_velocity = sim.obstacle.angular_velocity.native().view(1)
         model_inputs += [
             error_angle / ref_vars['angle'],
-             fluid_torque / ref_vars['torque'], # TODO
+            # fluid_torque / ref_vars['torque'], # TODO
             ang_velocity / ref_vars['ang_velocity']
         ]
         loss_inputs += [

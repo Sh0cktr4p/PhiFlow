@@ -6,6 +6,7 @@
     "export_stride": 8,
     "learning_rate_decay_half_life": 50,
     "max_acc": 0.25,
+    "max_vel": 3.0,
     "max_ang_acc": 0.025,
     "max_ang_vel": 0.75,
     "device": "GPU",
@@ -15,7 +16,7 @@
     "probes_size": 4,
     "online": {
         "simulation_path": "simple_simulation_2/", 
-        "export_path": "new_scenario/",
+        "export_path": "deleter/",
         "destinations_zone_growrate": 0.33,
         "n_timesteps": 1000,
         "simulation_dropout": 1.0,

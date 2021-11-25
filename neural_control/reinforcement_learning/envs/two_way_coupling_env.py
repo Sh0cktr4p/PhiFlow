@@ -158,7 +158,11 @@ class TwoWayCouplingEnv(Env):
             obs[np.isnan(obs)] = 0
             done = True
 
-        if not self.translation_only and np.abs(self.sim.angular_velocity.numpy()) > self.ref_vars['max_ang_vel']:
+        #if np.sum(self.sim.obstacle.velocity.numpy() ** 2) > self.ref_vars['max_vel'] ** 2:
+        #    print('Hit maximum velocity, ending trajectory')
+        #    done = True
+
+        if not self.translation_only and np.abs(self.sim.obstacle.angular_velocity.numpy()) > self.ref_vars['max_ang_vel']:
             print('Hit maximum angular velocity, ending trajectory')
             done = True
 
@@ -207,9 +211,14 @@ class TwoWayCouplingEnv(Env):
         torch.manual_seed(seed)
 
     def _generate_objectives(self) -> Tuple[torch.Tensor, torch.Tensor]:
+        preset_values = [
+            41.95254015709299,
+            48.60757465489678
+        ]
         pos_objective_min = torch.tensor(self.destination_margins)
         pos_objective_max = torch.tensor(self.domain_size) - torch.tensor(self.destination_margins)
         pos_objective = pos_objective_min + (torch.rand(2) * (pos_objective_max - pos_objective_min))
+        #pos_objective = torch.tensor(preset_values)
         ang_objective = torch.rand(1) * 2 * math.PI - math.PI
         return pos_objective.to(self.sim.device), ang_objective.to(self.sim.device)
 
@@ -219,7 +228,7 @@ class TwoWayCouplingEnv(Env):
     def _get_observation_space(self) -> Box:
         shape = self.reset().shape
         self.epis_idx -= 1  # Account for reset function call
-        return Box(-np.inf, np.inf, shape=self.reset().shape, dtype=np.float32)
+        return Box(-np.inf, np.inf, shape=shape, dtype=np.float32)
 
     def _extract_inputs(self) -> Tuple[np.ndarray, np.ndarray]:
         obs, loss = extract_inputs(self.sim, self.probes, self.pos_objective, self.ang_objective, self.ref_vars, self.translation_only)
@@ -233,6 +242,7 @@ class TwoWayCouplingEnv(Env):
 
         pos_rew = -1 * np.sum(self.pos_error ** 2)
 
+        vel_rew = -10 * np.sum(self.sim.obstacle.velocity.numpy() ** 2) / self.ref_vars['max_vel'] ** 2
         ang_vel_rew = -10 * (self.sim.obstacle.angular_velocity.numpy() / self.ref_vars['max_ang_vel']) ** 2
 
         rew = np.array(pos_rew) - baseline + ang_vel_rew
@@ -288,6 +298,7 @@ class TwoWayCouplingConfigEnv(TwoWayCouplingEnv):
 
         device = config.device
         max_acc = config.max_acc
+        max_vel = config.max_vel
         max_ang_acc = config.max_ang_acc
         max_ang_vel = config.max_ang_vel
         translation_only = config.translation_only
@@ -326,8 +337,11 @@ class TwoWayCouplingConfigEnv(TwoWayCouplingEnv):
             torque=obs_inertia * max_ang_acc,
             time=obs_width / inflow_velocity,
             destination_zone_size=domain_size - destination_margins * 2,
+            max_vel=max_vel,
             max_ang_vel=max_ang_vel,
         )
+
+        print("Ref vars: %s" % ref_vars)
 
         super().__init__(
             device=device,
@@ -362,11 +376,12 @@ def get_env(skip: int=8, stack: int=4) -> Env:
     inputs_path = os.path.join(os.path.dirname(__file__), os.pardir, os.pardir, 'inputs.json')
     
     env = TwoWayCouplingConfigEnv(inputs_path)
-    env = SkipStackWrapper(env, skip=skip, stack=stack)
+    #env = SkipStackWrapper(env, skip=skip, stack=stack)
     #env = RewNormWrapper(env, None)
     env = SeedOnResetWrapper(env)
-    env = Monitor(env, info_keywords=('rew_unnormalized',))
-        
+    #env = Monitor(env, info_keywords=('rew_unnormalized',))
+    
+    print('Observation space shape: %s' % str(env.observation_space.shape))
     return env
     
 def train_model(name: str, log_dir: str, n_timesteps: int, **agent_kwargs) -> SAC:
@@ -392,11 +407,11 @@ def train_model(name: str, log_dir: str, n_timesteps: int, **agent_kwargs) -> SA
 
     callback = CallbackList([
         EveryNRolloutsPlusStartFinishFunctionCallback(20000, store_fn),
-        RecordInfoScalarsCallback('rew_unnormalized'),
+        #RecordInfoScalarsCallback('rew_unnormalized'),
     ])
 
     model.learn(total_timesteps=n_timesteps, callback=callback, tb_log_name=name)
 
 if __name__ == '__main__':
     #train_model('128_128_128_3e-4_2grst_bs128_angvelpen_rewnorm_test', 'hparams_tuning', 20000, batch_size=128, learning_starts=32, learning_rate=3e-4, gradient_steps=2, policy_kwargs=dict(net_arch=[128, 128, 128]))
-    train_model('simple_env_norewnorm', 'simple_env', 10000, batch_size=128, learning_starts=32, learning_rate=3e-4, gradient_steps=2, policy_kwargs=dict(net_arch=[32, 24, 16]))
+    train_model('simple_env_norewnorm_dlt', 'simple_env', 100000, batch_size=128, learning_starts=32, policy_kwargs=dict(net_arch=[64, 64]))
