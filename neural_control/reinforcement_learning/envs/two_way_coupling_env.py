@@ -20,7 +20,7 @@ from phi import math
 
 from InputsManager import InputsManager
 from misc.TwoWayCouplingSimulation import TwoWayCouplingSimulation
-from network.misc_funcs import extract_inputs, Probes, prepare_export_folder, rotate
+from misc_funcs import extract_inputs, Probes, prepare_export_folder, rotate
 from reinforcement_learning.envs.rew_norm_wrapper import RewNormWrapper
 from reinforcement_learning.envs.skip_stack_wrapper import SkipStackWrapper
 from reinforcement_learning.envs.seed_on_reset_wrapper import SeedOnResetWrapper
@@ -65,6 +65,7 @@ class TwoWayCouplingEnv(Env):
         sim_export_path: str,
         export_vars: List[str],
         export_stride: int,
+        input_vars: list,
         ref_vars: dict,
     ):
         self.sim = TwoWayCouplingSimulation(device, translation_only)
@@ -84,6 +85,7 @@ class TwoWayCouplingEnv(Env):
         self.translation_only = translation_only
         self.sponge_intensity = sponge_intensity
         self.sponge_size = sponge_size
+        self.input_vars = input_vars
         self.ref_vars = ref_vars
         self.inflow_on = inflow_on
         self.inflow_velocity = inflow_velocity
@@ -231,7 +233,7 @@ class TwoWayCouplingEnv(Env):
         return Box(-np.inf, np.inf, shape=shape, dtype=np.float32)
 
     def _extract_inputs(self) -> Tuple[np.ndarray, np.ndarray]:
-        obs, loss = extract_inputs(self.sim, self.probes, self.pos_objective, self.ang_objective, self.ref_vars, self.translation_only)
+        obs, loss = extract_inputs(self.input_vars, self.sim, self.probes, self.pos_objective, self.ang_objective, self.ref_vars, self.translation_only)
         return obs.cpu().numpy().reshape(-1), loss.cpu().numpy().reshape(-1)
 
     def _get_obs(self) -> np.ndarray:
@@ -328,6 +330,8 @@ class TwoWayCouplingConfigEnv(TwoWayCouplingEnv):
         inflow_on = config.simulation['inflow_on']
         inflow_velocity = config.simulation['reference_velocity']
 
+        input_vars = config.nn_vars
+
         ref_vars = dict(
             length=obs_width,
             angle=math.PI,
@@ -369,6 +373,7 @@ class TwoWayCouplingConfigEnv(TwoWayCouplingEnv):
             sim_export_path=sim_export_path,
             export_vars=export_vars,
             export_stride=export_stride,
+            input_vars=input_vars,
             ref_vars=ref_vars,
         )
 
