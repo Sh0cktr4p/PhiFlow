@@ -24,7 +24,7 @@
     ],
     "online": {
         "simulation_path": "simple_simulation_2/", 
-        "export_path": "deleter/",
+        "export_path": "sanity_check/",
         "destinations_zone_growrate": 0.33,
         "n_timesteps": 1000,
         "simulation_dropout": 1.0,
@@ -48,7 +48,7 @@
         }
     },
     "supervised": {
-        "initial_conditions_path": "/home/ramos/phiflow/storage/baseline_simple_noinflow/",
+        "initial_conditions_path": "/home/felix/Code/HiWi/Brener/PhiFlow/neural_control/storage/simulation_data/simple_simulation_2/",
         "learning_rate": 0.004,
         "n_iterations": 320001,
         "dataset_path": "/home/ramos/phiflow/storage/dataset_simple_noinflow/",
@@ -72,7 +72,7 @@
         }
     },
     "simulation": {
-        "path": "/home/felix/Code/HiWi/Brener/PhiFlow/neural_control/storage/simulation_data/simple_simulation_2",
+        "path": "/home/felix/Code/HiWi/Brener/PhiFlow/neural_control/storage/simulation_data/simple_simulation_2/",
         "n_steps": 101,
         "re": 1000,
         "tripping_on": false,

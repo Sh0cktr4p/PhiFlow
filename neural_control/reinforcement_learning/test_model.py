@@ -10,7 +10,7 @@ def evaluate_model(model: SAC, env: Env):
 
     episode = 0
 
-    while episode < 5:
+    while episode < 20:
         step = 0
         cum_rew = 0
         done = False
@@ -29,12 +29,12 @@ def evaluate_model(model: SAC, env: Env):
 
 if __name__ == '__main__':
     config_path = os.path.join(os.path.dirname(__file__), os.pardir, 'inputs.json')
-    model_path = os.path.join(os.path.dirname(__file__), os.pardir, 'storage', 'networks', 'simple_env_norewnorm_2')
+    model_path = os.path.join(os.path.dirname(__file__), os.pardir, 'storage', 'networks', 'simple_env_norewnorm_noskipstack_2')
 
     print(f"loading model from {model_path}")
 
     env = TwoWayCouplingConfigEnv(config_path)
-    env = SkipStackWrapper(env, skip=8, stack=4)
+    #env = SkipStackWrapper(env, skip=8, stack=4)
     env = SeedOnResetWrapper(env, 1000)
     model = SAC.load(model_path)
 

@@ -142,12 +142,12 @@ class TwoWayCouplingEnv(Env):
         
     def step(self, action: np.ndarray) -> Tuple[np.ndarray, np.ndarray, bool, Dict[str, Any]]:
         self.step_idx += 1
-        forces, torque = self._split_action_to_force_torque(action)
+        self.forces, self.torque = self._split_action_to_force_torque(action)
         if self.translation_only:
-            torque *= 0
-        self.forces = self._to_global(forces)
-        self.torque = torque
-        self.sim.apply_forces(self.forces * self.ref_vars['force'], torque * self.ref_vars['torque'])
+            self.torque *= 0
+        self.forces = self._to_global(self.forces)
+
+        self.sim.apply_forces(self.forces * self.ref_vars['force'], self.torque * self.ref_vars['torque'])
         self.sim.advect()
         converged = self._make_incompressible()
         self.probes.update_transform(self.sim.obstacle.geometry.center.numpy(), -1 * self._obstacle_angle.numpy())
@@ -277,7 +277,7 @@ class TwoWayCouplingEnv(Env):
 
     def _split_action_to_force_torque(self, action: np.ndarray) -> Tuple[torch.Tensor, torch.Tensor]:
         control_effort = torch.tensor(action).to(self.sim.device)
-        control_effort = torch.clamp(control_effort, -1, 1)
+        #control_effort = torch.clamp(control_effort, -1, 1)    # TODO
         return control_effort[:2], control_effort[-1:]
 
     def _to_global(self, force: torch.Tensor) -> torch.Tensor:
@@ -285,11 +285,7 @@ class TwoWayCouplingEnv(Env):
 
     @property
     def _obstacle_angle(self) -> torch.Tensor:
-        if self.translation_only:
-            base_angle = torch.tensor(0)
-        else:
-            base_angle = self.sim.obstacle.geometry.angle.native()
-        return base_angle - math.PI / 2.0
+        return (self.sim.obstacle.geometry.angle - math.PI / 2.0).native().cpu()
 
 
 class TwoWayCouplingConfigEnv(TwoWayCouplingEnv):
@@ -419,4 +415,4 @@ def train_model(name: str, log_dir: str, n_timesteps: int, **agent_kwargs) -> SA
 
 if __name__ == '__main__':
     #train_model('128_128_128_3e-4_2grst_bs128_angvelpen_rewnorm_test', 'hparams_tuning', 20000, batch_size=128, learning_starts=32, learning_rate=3e-4, gradient_steps=2, policy_kwargs=dict(net_arch=[128, 128, 128]))
-    train_model('simple_env_norewnorm_dlt', 'simple_env', 100000, batch_size=128, learning_starts=32, policy_kwargs=dict(net_arch=[64, 64]))
+    train_model('simple_env_norewnorm_noskipstack_2', 'simple_env', 150000, batch_size=128, learning_starts=32, policy_kwargs=dict(net_arch=[64, 64]))

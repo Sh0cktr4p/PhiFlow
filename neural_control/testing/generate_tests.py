@@ -1,6 +1,6 @@
 from collections import defaultdict
 import os
-from Dataset import Dataset
+from supervised.Dataset import Dataset
 import numpy as np
 import json
 from InputsManager import InputsManager

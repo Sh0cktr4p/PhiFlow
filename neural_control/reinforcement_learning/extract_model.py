@@ -18,6 +18,10 @@ class SACActorModule(torch.nn.Module):
     def rescale(self, x: torch.Tensor) -> torch.Tensor:
         return self.action_space_low + (0.5 * (torch.tanh(x) + 1.0) * (self.action_space_high - self.action_space_low))
 
+    @staticmethod
+    def load_from_path(path: str) -> "SACActorModule":
+        return torch.load(path)
+
 
 def store_sac_actor_as_torch_module(agent_path: str, target_path: str):
     from stable_baselines3.sac import SAC
