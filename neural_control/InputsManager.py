@@ -1,7 +1,10 @@
 import json
+from collections import defaultdict
 import numpy as np
 import os
 from copy import deepcopy
+import torch
+from phi.math import PI
 
 
 class InputsManager():
@@ -35,7 +38,13 @@ class InputsManager():
 
         """
         try:
-            self.simulation['obs_mass'] = self.simulation['obs_density'] * self.simulation['obs_width'] * self.simulation['obs_height']
+            if self.simulation["obs_type"] == "disc":
+                area = self.simulation["obs_width"]**2 * PI
+            elif self.simulation["obs_type"] == "box":
+                area = self.simulation['obs_width'] * self.simulation['obs_height']
+            else:
+                print("Invalid obs_type")
+            self.simulation['obs_mass'] = area * self.simulation['obs_density']
             self.simulation['obs_inertia'] = 1 / 12.0 * (self.simulation['obs_width'] ** 2 + self.simulation['obs_height'] ** 2) * self.simulation['obs_mass']  # Box's moment of inertia
             self.simulation['domain_size'] = np.array(self.simulation['domain_size'])
         except:
@@ -46,31 +55,38 @@ class InputsManager():
         except:
             print('Online training properties were not calculated')
             pass
-        self.n_past_features = np.sum((
-            (self.probes_n_rows * (self.probes_n_columns - 1)) * 2 * 4,  # Probes
-            2,  # Obs velocity
-            2,  # Reference xy
-            2,  # Fluid forces
-            2,  # Control forces
-        ))
-        self.n_present_features = np.sum((
-            (self.probes_n_rows * (self.probes_n_columns - 1)) * 2 * 4,  # Probes
-            2,  # Obs velocity
-            2,  # Reference xy
-            2,  # Fluid forces
-        ))
-        if not self.translation_only:
-            self.n_past_features += np.sum((
-                1,  # Reference angle
-                1,  # Fluid torque
-                1,  # Control torque
-                1,  # Angular velocity
-            ))
-            self.n_present_features += np.sum((
-                1,  # Reference angle
-                1,  # Fluid torque
-                1,  # Angular velocity
-            ))
+
+        n_features = defaultdict(lambda: 1)
+        n_features["probes_vx"] = (self.probes_n_rows * (self.probes_n_columns - 1)) * 4,
+        n_features["probes_vy"] = (self.probes_n_rows * (self.probes_n_columns - 1)) * 4,
+        self.n_past_features = np.sum([n_features[var] for var in self.nn_vars])
+        self.n_present_features = np.sum([n_features[var] for var in self.nn_vars if "control" not in var])
+        # self.n_past_features = np.sum((
+        #     # (self.probes_n_rows * (self.probes_n_columns - 1)) * 2 * 4,  # Probes
+        #     2,  # Obs velocity
+        #     2,  # Reference xy
+        #     # 2,  # Fluid forces
+        #     2,  # Control forces
+        # ))
+        # self.n_present_features = np.sum((
+        #     # (self.probes_n_rows * (self.probes_n_columns - 1)) * 2 * 4,  # Probes
+        #     2,  # Obs velocity
+        #     2,  # Reference xy
+        #     # 2,  # Fluid forces
+        # ))
+        # if not self.translation_only:
+        #     self.n_past_features += np.sum((
+        #         1,  # Reference angle
+        #         # 1,  # Fluid torque
+        #         1,  # Control torque
+        #         # 2,  # Second control force # TODO
+        #         1,  # Angular velocity
+        #     ))
+        #     self.n_present_features += np.sum((
+        #         1,  # Reference angle
+        #         # 1,  # Fluid torque
+        #         1,  # Angular velocity
+        #     ))
 
     def delete_attributes(self, string: str):
         """
@@ -83,17 +99,19 @@ class InputsManager():
         keys = [key for key in self.__dict__.keys() if string in key]
         for key in keys: self.__dict__.pop(key, None)
 
-    def export(self, path: str, exclude: list = [], only: list = []):
+    def export(self, filepath: str, exclude: list = [], only: list = []):
         """
         Export current attributes as a json flie
 
         Params:
-            path: path to file where values will be exported to
+            filepath: path to file where values will be exported to
             exclude: do not export these attributes
             only: export only attributes that have this string on their name
 
         """
         export_dict = deepcopy(self.__dict__)
+        # Create directory in case it does not exist
+        os.makedirs(os.path.dirname(filepath), exist_ok=True)
         if only:
             entries_to_remove = [key for key in export_dict.keys() if not any(value in key for value in only)]
             for entry in entries_to_remove: export_dict.pop(entry, None)
@@ -105,7 +123,7 @@ class InputsManager():
                 for key2, value2 in value.items():
                     if type(value2).__module__ == np.__name__:
                         export_dict[key][key2] = value2.tolist()
-        with open(os.path.abspath(path), 'w') as f:
+        with open(os.path.abspath(filepath), 'w') as f:
             json.dump(export_dict, f, indent="    ")
 
     def add_values(self, path: str, only: list = []):
@@ -125,6 +143,52 @@ class InputsManager():
             if key in self.__dict__.keys():
                 if value != getattr(self, key): raise ValueError(f'Trying to add existing attribute {key} with different value')
             setattr(self, key, value)
+
+
+class RLInputsManager():
+
+    """
+    This class manages the inputs that will be used for the models trained via RL
+
+    """
+
+    def __init__(self, past_window: int, n_features: int, n_snapshots_per_window: int, device: torch.device):
+        self.past_window = past_window
+        self.n_spw = n_snapshots_per_window
+        self.n_features = n_features
+        self._inputs = torch.zeros((1, n_features, past_window * n_snapshots_per_window)).to(device)
+        self.device = device
+
+    @property
+    def values(self):
+        """
+        Return past inputs taking maximum absolute value of snapshots per window (conserves sign)
+        Return shape should be (batch, n_features, past_window)
+
+        """
+        # Reshape so that we can take maximum absolute value easily
+        _inputs = self._inputs.view(1, self.n_features, self.past_window, self.n_spw)
+        indices = torch.argmax(torch.abs(_inputs), dim=3)
+        inputs_max = torch.zeros(_inputs.shape[:-1]).to(self.device)
+        for i in range(self.n_features):
+            for j in range(self.past_window):
+                inputs_max[0, i, j] = _inputs[0, i, j, indices[0, i, j]]
+        return inputs_max
+
+    def add_snapshot(self, snapshot: torch.Tensor):
+        """
+        Add a snapshot to the past inputs
+
+        Params:
+            snapshot: snapshot to add
+
+        """
+        assert snapshot.shape == torch.Size([1, self.n_features])
+        if torch.any(self._inputs > 0):
+            self._inputs = torch.cat((self._inputs[:, :, 1:], snapshot.view(1, self.n_features, 1)), dim=2)
+        else:  # Initialize self._inputs
+            for n in range(self._inputs.shape[-1]):
+                self._inputs[..., n] = snapshot
 
 
 if __name__ == '__main__':

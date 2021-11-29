@@ -97,7 +97,6 @@ class MaxAndSkipEnv(Wrapper):
         max_val = frames.max(axis=0)
         abs_max_frame = np.where(-min_val > max_val, min_val, max_val)
 
-
         return abs_max_frame, total_reward, done, acc_info
 
     def reset(self):

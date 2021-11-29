@@ -1,9 +1,9 @@
 {
-    "dataPath": "/home/felix/Code/HiWi/Brener/PhiFlow/neural_control/storage/simulation_data",
-    "sModel": "full_obs_long",
+    "dataPath": "/home/felix/Code/HiWi/Brener/PhiFlow/neural_control/storage/simulation_data/",
+    "sModel": "sanity_check",
     "sVar": [
         "obs_mask",
-        "vx",
+        "vorticity",
         "obs_xy",
         "fluid_force_x",
         "fluid_force_y",
@@ -105,8 +105,8 @@
         "",
         "",
         "",
-        " ",
-        " ",
+        "",
+        "",
         " ",
         " ",
         " ",
@@ -151,14 +151,14 @@
         1,
         1,
         1,
-        1,
-        1,
+        0,
         1,
         0,
         0,
-        1,
-        1,
         0,
+        0,
+        0,
+        1,
         0
     ]
 }

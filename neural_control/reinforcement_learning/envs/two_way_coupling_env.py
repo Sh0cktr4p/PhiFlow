@@ -20,7 +20,7 @@ from phi import math
 
 from InputsManager import InputsManager
 from misc.TwoWayCouplingSimulation import TwoWayCouplingSimulation
-from network.misc_funcs import extract_inputs, Probes, prepare_export_folder, rotate
+from misc_funcs import extract_inputs, Probes, prepare_export_folder, rotate
 from reinforcement_learning.envs.rew_norm_wrapper import RewNormWrapper
 from reinforcement_learning.envs.skip_stack_wrapper import SkipStackWrapper
 from reinforcement_learning.envs.seed_on_reset_wrapper import SeedOnResetWrapper
@@ -44,32 +44,40 @@ class TwoWayCouplingEnv(Env):
         n_steps: int,
         dt: float,
         domain_size: Tuple[int, int],
+        destination_margins: Tuple[int, int],
         re: float,
-        obs_width: int, 
-        obs_height: int, 
+        obs_type: str,
+        obs_width: float, 
+        obs_height: float, 
         obs_xy: Tuple[int, int], 
         obs_mass: float,
         obs_inertia: float,
         translation_only: bool,
         sponge_intensity: float,
         sponge_size: List[int],
+        inflow_on: bool,
         inflow_velocity: float,
         probes_offset: float, 
         probes_size: float,
         probes_n_rows: int,
         probes_n_columns: int,
-        past_window: int,
-        n_past_features: int,
         sim_import_path: str,
         sim_export_path: str,
         export_vars: List[str],
         export_stride: int,
+        input_vars: list,
         ref_vars: dict,
     ):
         self.sim = TwoWayCouplingSimulation(device, translation_only)
         print(f"Sim import path: {sim_import_path}")
-        self.sim.set_initial_conditions(obs_width, obs_height, path=sim_import_path)
+        self.sim.set_initial_conditions(
+            obs_type=obs_type,
+            obs_w=obs_width, 
+            obs_h=obs_height, 
+            path=sim_import_path
+        )
         self.dt = dt
+        self.destination_margins = destination_margins
         self.domain_size = domain_size
         self.re = re
         self.obs_mass = obs_mass
@@ -77,16 +85,18 @@ class TwoWayCouplingEnv(Env):
         self.translation_only = translation_only
         self.sponge_intensity = sponge_intensity
         self.sponge_size = sponge_size
+        self.input_vars = input_vars
         self.ref_vars = ref_vars
+        self.inflow_on = inflow_on
         self.inflow_velocity = inflow_velocity
 
         self.probes = Probes(
-            obs_width / 2 + probes_offset,
-            obs_height / 2 + probes_offset,
-            probes_size,
-            probes_n_rows,
-            probes_n_columns,
-            obs_xy
+            width_inner=obs_width / 2 + probes_offset,
+            height_inner=obs_height / 2 + probes_offset,
+            size=probes_size,
+            n_rows=probes_n_rows,
+            n_columns=probes_n_columns,
+            center=obs_xy,
         )
 
         self.n_steps = n_steps
@@ -102,9 +112,6 @@ class TwoWayCouplingEnv(Env):
         self.rew = None
         self.rew_baseline = np.array(0)
 
-        self.past_window = past_window
-        self.n_past_features = n_past_features
-
         self.sim_export_path = sim_export_path
         self.export_vars = export_vars
         self.export_stride = export_stride
@@ -117,17 +124,17 @@ class TwoWayCouplingEnv(Env):
         self.step_idx = 0
         self.epis_idx += 1
         self.sim.setup_world(
-            self.re, 
-            self.domain_size, 
-            self.dt, 
-            self.obs_mass, 
-            self.obs_inertia, 
-            self.inflow_velocity, 
-            self.sponge_intensity,
-            self.sponge_size
+            re=self.re, 
+            domain_size=self.domain_size, 
+            dt=self.dt, 
+            obs_mass=self.obs_mass, 
+            obs_inertia=self.obs_inertia, 
+            reference_velocity=self.inflow_velocity, 
+            sponge_intensity=self.sponge_intensity,
+            sponge_size=self.sponge_size,
+            inflow_on=self.inflow_on,
         )
-        self.pos_objective = (torch.rand(2) * torch.tensor([40, 20]) + torch.tensor([40, 20])).to(self.sim.device)
-        self.ang_objective = (torch.rand(1) * 2 * math.PI - math.PI).to(self.sim.device)
+        self.pos_objective, self.ang_objective = self._generate_objectives()
         obs, loss = self._extract_inputs()
         self.rew_baseline = self._get_rew(loss, 0, False)
         print("pos objective: %s" % str(self.pos_objective))
@@ -135,15 +142,15 @@ class TwoWayCouplingEnv(Env):
         
     def step(self, action: np.ndarray) -> Tuple[np.ndarray, np.ndarray, bool, Dict[str, Any]]:
         self.step_idx += 1
-        forces, torque = self._split_action_to_force_torque(action)
+        self.forces, self.torque = self._split_action_to_force_torque(action)
         if self.translation_only:
-            torque *= 0
-        self.forces = self._to_global(forces)
-        self.torque = torque
-        self.sim.apply_forces(self.forces * self.ref_vars['force'], torque * self.ref_vars['torque'])
+            self.torque *= 0
+        self.forces = self._to_global(self.forces)
+
+        self.sim.apply_forces(self.forces * self.ref_vars['force'], self.torque * self.ref_vars['torque'])
         self.sim.advect()
         converged = self._make_incompressible()
-        self.probes.update_transform(self.sim.obstacle.geometry.center.numpy(), -(self.sim.obstacle.geometry.angle.numpy() - math.PI / 2.0))
+        self.probes.update_transform(self.sim.obstacle.geometry.center.numpy(), -1 * self._obstacle_angle.numpy())
         self.sim.calculate_fluid_forces()
         obs, loss = self._extract_inputs()
         done = self._obstacle_leaving_domain() or self.step_idx == self.n_steps or not converged
@@ -153,7 +160,11 @@ class TwoWayCouplingEnv(Env):
             obs[np.isnan(obs)] = 0
             done = True
 
-        if np.abs(self.sim.obstacle.angular_velocity.numpy()) > self.ref_vars['max_ang_vel']:
+        #if np.sum(self.sim.obstacle.velocity.numpy() ** 2) > self.ref_vars['max_vel'] ** 2:
+        #    print('Hit maximum velocity, ending trajectory')
+        #    done = True
+
+        if not self.translation_only and np.abs(self.sim.obstacle.angular_velocity.numpy()) > self.ref_vars['max_ang_vel']:
             print('Hit maximum angular velocity, ending trajectory')
             done = True
 
@@ -201,16 +212,28 @@ class TwoWayCouplingEnv(Env):
         print("this is seed, yo")
         torch.manual_seed(seed)
 
+    def _generate_objectives(self) -> Tuple[torch.Tensor, torch.Tensor]:
+        preset_values = [
+            41.95254015709299,
+            48.60757465489678
+        ]
+        pos_objective_min = torch.tensor(self.destination_margins)
+        pos_objective_max = torch.tensor(self.domain_size) - torch.tensor(self.destination_margins)
+        pos_objective = pos_objective_min + (torch.rand(2) * (pos_objective_max - pos_objective_min))
+        #pos_objective = torch.tensor(preset_values)
+        ang_objective = torch.rand(1) * 2 * math.PI - math.PI
+        return pos_objective.to(self.sim.device), ang_objective.to(self.sim.device)
+
     def _get_action_space(self) -> Box:
         return Box(-1, 1, shape=(3,), dtype=np.float32)
 
     def _get_observation_space(self) -> Box:
         shape = self.reset().shape
         self.epis_idx -= 1  # Account for reset function call
-        return Box(-np.inf, np.inf, shape=self.reset().shape, dtype=np.float32)
+        return Box(-np.inf, np.inf, shape=shape, dtype=np.float32)
 
     def _extract_inputs(self) -> Tuple[np.ndarray, np.ndarray]:
-        obs, loss = extract_inputs(self.sim, self.probes, self.pos_objective, self.ang_objective, self.ref_vars, self.translation_only)
+        obs, loss = extract_inputs(self.input_vars, self.sim, self.probes, self.pos_objective, self.ang_objective, self.ref_vars, self.translation_only)
         return obs.cpu().numpy().reshape(-1), loss.cpu().numpy().reshape(-1)
 
     def _get_obs(self) -> np.ndarray:
@@ -221,6 +244,7 @@ class TwoWayCouplingEnv(Env):
 
         pos_rew = -1 * np.sum(self.pos_error ** 2)
 
+        vel_rew = -10 * np.sum(self.sim.obstacle.velocity.numpy() ** 2) / self.ref_vars['max_vel'] ** 2
         ang_vel_rew = -10 * (self.sim.obstacle.angular_velocity.numpy() / self.ref_vars['max_ang_vel']) ** 2
 
         rew = np.array(pos_rew) - baseline + ang_vel_rew
@@ -253,12 +277,15 @@ class TwoWayCouplingEnv(Env):
 
     def _split_action_to_force_torque(self, action: np.ndarray) -> Tuple[torch.Tensor, torch.Tensor]:
         control_effort = torch.tensor(action).to(self.sim.device)
-        control_effort = torch.clamp(control_effort, -1, 1)
+        #control_effort = torch.clamp(control_effort, -1, 1)    # TODO
         return control_effort[:2], control_effort[-1:]
 
     def _to_global(self, force: torch.Tensor) -> torch.Tensor:
-        current_obs_angle = -(self.sim.obstacle.geometry.angle - math.PI / 2.0).native()
-        return rotate(force, current_obs_angle)
+        return rotate(force, -1 * self._obstacle_angle)
+
+    @property
+    def _obstacle_angle(self) -> torch.Tensor:
+        return (self.sim.obstacle.geometry.angle - math.PI / 2.0).native().cpu()
 
 
 class TwoWayCouplingConfigEnv(TwoWayCouplingEnv):
@@ -267,49 +294,82 @@ class TwoWayCouplingConfigEnv(TwoWayCouplingEnv):
         config = InputsManager(config_path)
         config.calculate_properties()
 
+        device = config.device
+        max_acc = config.max_acc
+        max_vel = config.max_vel
+        max_ang_acc = config.max_ang_acc
+        max_ang_vel = config.max_ang_vel
+        translation_only = config.translation_only
+        probes_offset = config.probes_offset
+        probes_size = config.probes_size
+        probes_n_rows = config.probes_n_rows
+        probes_n_columns = config.probes_n_columns
+        export_vars = config.export_vars
+        export_stride = config.export_stride
+
+        n_steps = config.online['n_timesteps']
+        destination_margins = config.online['destinations_margins']
+        sim_import_path = os.path.join(simulation_storage_path, config.online['simulation_path'])
+        sim_export_path = os.path.join(simulation_storage_path, config.online['export_path'])
+
+        dt = config.simulation['dt']
+        domain_size = config.simulation['domain_size']
+        re = config.simulation['re']
+        obs_type = config.simulation['obs_type']
         obs_width = config.simulation['obs_width']
+        obs_height = config.simulation['obs_height']
+        obs_xy = config.simulation['obs_xy']
         obs_mass = config.simulation['obs_mass']
         obs_inertia = config.simulation['obs_inertia']
-        inflow_velocity = config.simulation['inflow_velocity']
-        domain_size = config.simulation['domain_size']
+        sponge_intensity = config.simulation['sponge_intensity']
+        sponge_size = config.simulation['sponge_size']
+        inflow_on = config.simulation['inflow_on']
+        inflow_velocity = config.simulation['reference_velocity']
+
+        input_vars = config.nn_vars
 
         ref_vars = dict(
             length=obs_width,
             angle=math.PI,
             velocity=inflow_velocity,
             ang_velocity=inflow_velocity / obs_width,
-            force=obs_mass * config.max_acc,
-            torque=obs_inertia * config.max_ang_acc,
+            force=obs_mass * max_acc,
+            torque=obs_inertia * max_ang_acc,
             time=obs_width / inflow_velocity,
-            destination_zone_size=domain_size - config.online['destinations_margins'] * 2,
-            max_ang_vel=config.max_ang_vel,
+            destination_zone_size=domain_size - destination_margins * 2,
+            max_vel=max_vel,
+            max_ang_vel=max_ang_vel,
         )
 
+        print("Ref vars: %s" % ref_vars)
+
         super().__init__(
-            device=config.device,
-            n_steps=config.online['n_steps'],
-            dt = config.simulation['dt'],
+            device=device,
+            n_steps=n_steps,
+            dt=dt,
             domain_size=domain_size,
-            re=config.simulation['re'],
+            destination_margins=destination_margins,
+            re=re,
+            obs_type=obs_type,
             obs_width=obs_width,
-            obs_height=config.simulation['obs_height'],
-            obs_xy=config.simulation['obs_xy'],
+            obs_height=obs_height,
+            obs_xy=obs_xy,
             obs_mass=obs_mass,
             obs_inertia=obs_inertia,
-            translation_only=config.translation_only,
-            sponge_intensity=config.simulation['sponge_intensity'],
-            sponge_size=config.simulation['sponge_size'],
+            translation_only=translation_only,
+            sponge_intensity=sponge_intensity,
+            sponge_size=sponge_size,
+            inflow_on=inflow_on,
             inflow_velocity=inflow_velocity,
-            probes_offset=config.probes_offset,
-            probes_size=config.probes_size,
-            probes_n_rows=config.probes_n_rows,
-            probes_n_columns=config.probes_n_columns,
-            past_window=config.past_window,
-            n_past_features=config.n_past_features,
-            sim_import_path=os.path.join(simulation_storage_path, config.online['simulation_path']),
-            sim_export_path=os.path.join(simulation_storage_path, config.online['export_path']),
-            export_vars=config.export_vars,
-            export_stride=config.export_stride,
+            probes_offset=probes_offset,
+            probes_size=probes_size,
+            probes_n_rows=probes_n_rows,
+            probes_n_columns=probes_n_columns,
+            sim_import_path=sim_import_path,
+            sim_export_path=sim_export_path,
+            export_vars=export_vars,
+            export_stride=export_stride,
+            input_vars=input_vars,
             ref_vars=ref_vars,
         )
 
@@ -317,13 +377,12 @@ def get_env(skip: int=8, stack: int=4) -> Env:
     inputs_path = os.path.join(os.path.dirname(__file__), os.pardir, os.pardir, 'inputs.json')
     
     env = TwoWayCouplingConfigEnv(inputs_path)
-    env = SkipStackWrapper(env, skip=skip, stack=stack)
-    env = RewNormWrapper(env, None)
+    #env = SkipStackWrapper(env, skip=skip, stack=stack)
+    #env = RewNormWrapper(env, None)
     env = SeedOnResetWrapper(env)
-    env = Monitor(env, info_keywords=('rew_unnormalized',))
-
+    #env = Monitor(env, info_keywords=('rew_unnormalized',))
+    
     print('Observation space shape: %s' % str(env.observation_space.shape))
-        
     return env
     
 def train_model(name: str, log_dir: str, n_timesteps: int, **agent_kwargs) -> SAC:
@@ -349,11 +408,11 @@ def train_model(name: str, log_dir: str, n_timesteps: int, **agent_kwargs) -> SA
 
     callback = CallbackList([
         EveryNRolloutsPlusStartFinishFunctionCallback(20000, store_fn),
-        RecordInfoScalarsCallback('rew_unnormalized'),
+        #RecordInfoScalarsCallback('rew_unnormalized'),
     ])
 
     model.learn(total_timesteps=n_timesteps, callback=callback, tb_log_name=name)
 
 if __name__ == '__main__':
     #train_model('128_128_128_3e-4_2grst_bs128_angvelpen_rewnorm_test', 'hparams_tuning', 20000, batch_size=128, learning_starts=32, learning_rate=3e-4, gradient_steps=2, policy_kwargs=dict(net_arch=[128, 128, 128]))
-    train_model('64_32_3e-4_bs128_angvelpen_rewnorm_small_obs_seeded_2', 'hparams_tuning', 60000, batch_size=128, learning_starts=32, policy_kwargs=dict(net_arch=[64, 32]))
+    train_model('simple_env_norewnorm_noskipstack_2', 'simple_env', 150000, batch_size=128, learning_starts=32, policy_kwargs=dict(net_arch=[64, 64]))

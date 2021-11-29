@@ -18,6 +18,10 @@ class SACActorModule(torch.nn.Module):
     def rescale(self, x: torch.Tensor) -> torch.Tensor:
         return self.action_space_low + (0.5 * (torch.tanh(x) + 1.0) * (self.action_space_high - self.action_space_low))
 
+    @staticmethod
+    def load_from_path(path: str) -> "SACActorModule":
+        return torch.load(path)
+
 
 def store_sac_actor_as_torch_module(agent_path: str, target_path: str):
     from stable_baselines3.sac import SAC
@@ -34,7 +38,7 @@ def load_sac_torch_module(path: str) -> SACActorModule:
 
 
 if __name__ == '__main__':
-    store_sac_actor_as_torch_module('neural_control/storage/networks/32_24_16_3e-4_2grst_bs128_angvelpen_rewnorm_full_obs', '../../../Test/PythonStuff/rl_model.pkl')
+    store_sac_actor_as_torch_module('neural_control/storage/networks/simple_env_norewnorm_noskipstack', '../../../Test/PythonStuff/noskipstack.pkl')
     exit()
     from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
 

@@ -2,7 +2,7 @@ from typing import Iterable, Tuple
 import torch
 from TwoWayCouplingSimulation import *
 from Probes import Probes
-from collections import defaultdict
+from collections import OrderedDict, defaultdict
 from phi.torch.flow import *
 import os
 
@@ -27,17 +27,27 @@ def update_inputs(past_inputs: torch.Tensor, present_inputs: torch.Tensor, *cont
     return new_past_inputs
 
 
-def extract_inputs(sim: TwoWayCouplingSimulation, probes: Probes, x_objective: tuple, angle_objective: tuple, ref_vars: dict = None, translation_only: bool = False) -> Tuple[torch.Tensor, torch.Tensor]:
+def extract_inputs(
+    vars: list,
+    sim: TwoWayCouplingSimulation,
+    probes: Probes,
+    x_objective: tuple,
+    angle_objective: tuple,
+    ref_vars: dict = None,
+    translation_only: bool = False
+) -> Tuple[torch.Tensor, torch.Tensor]:
     """
     Extract inputs that will be used on network model
 
     Params:
+        vars: list of variables that will be used for extracting inputs
         sim: simulation object
         probes: probes manager
         x_objective : final destination in xy space
         angle_objective: angle that the box should go to
         ref_vars: reference variables for non dimensionalizing/normalizing inputs
         translation_only: if true then inputs that are related with rotation will not be gathered
+        var:
 
     Returns:
         model_inputs: tensor containing inputs for model
@@ -46,47 +56,108 @@ def extract_inputs(sim: TwoWayCouplingSimulation, probes: Probes, x_objective: t
     """
 
     if not ref_vars: ref_vars = defaultdict(lambda: 1)
-    # Gather inputs
-    probes_velocity = torch.stack([
-        sim.velocity.x.sample_at(probes.get_points_as_tensor()).native(),
-        sim.velocity.y.sample_at(probes.get_points_as_tensor()).native()
-    ])
-    error_xy = (x_objective - sim.obstacle.geometry.center).native()
-    fluid_force = sim.fluid_force.native()
-    obs_velocity = sim.obstacle.velocity.native()
-    error_angle = (angle_objective - (sim.obstacle.geometry.angle - PI / 2)).native().view(1)
-    fluid_torque = math.sum(sim.fluid_torque).native().view(1)
-    ang_velocity = sim.obstacle.angular_velocity.native().view(1)
-    # Transfer values to box local reference frame
+    getter = dict(
+        probes_vx=lambda: sim.velocity.x.sample_at(probes.get_points_as_tensor()).native(),
+        probes_vy=lambda: sim.velocity.y.sample_at(probes.get_points_as_tensor()).native(),
+        obs_vx=lambda: sim.obstacle.velocity.native()[0].view(1),
+        obs_vy=lambda: sim.obstacle.velocity.native()[1].view(1),
+        error_x=lambda: (x_objective[0] - sim.obstacle.geometry.center[0]).native().view(1),
+        error_y=lambda: (x_objective[1] - sim.obstacle.geometry.center[1]).native().view(1),
+        fluid_force_x=lambda: sim.fluid_force.native()[0].view(1),
+        fluid_force_y=lambda: sim.fluid_force.native()[1].view(1),
+        control_force_x=lambda: None,
+        control_force_y=lambda: None,
+        error_angle=lambda: (angle_objective - (sim.obstacle.geometry.angle - PI / 2)).native().view(1),
+        fluid_torque=lambda: math.sum(sim.fluid_torque).native().view(1),
+        ang_velocity=lambda: sim.obstacle.angular_velocity.native().view(1)
+    )
+    ref_vars_hash = dict(
+        probes_vx="velocity",
+        probes_vy="velocity",
+        obs_vx="velocity",
+        obs_vy="velocity",
+        error_x="length",
+        error_y="length",
+        fluid_force_x="force",
+        fluid_force_y="force",
+        control_force_x="force",
+        control_force_y="force",
+        error_angle="angle",
+        fluid_torque="torque",
+        ang_velocity="ang_velocity",
+    )
+    inputs = OrderedDict()
+    for var in vars:
+        value = getter[var]()
+        if value is not None: inputs[var] = value / ref_vars[ref_vars_hash[var]]
+    # Rotate vector variables
+    # It is assumed that the variables are being inserted in order, i.e. first x then y
     negative_angle = (sim.obstacle.geometry.angle - math.PI / 2.0).native()
-    # negative_angle = torch.tensor(0)
-    probes_velocity = rotate(probes_velocity, negative_angle) # TODO
-    error_xy = rotate(error_xy, negative_angle)
-    fluid_force = rotate(fluid_force, negative_angle) # TODO
-    obs_velocity = rotate(obs_velocity, negative_angle)
-
-    model_inputs = [
-        #probes_velocity[0] / ref_vars['velocity'],
-        #probes_velocity[1] / ref_vars['velocity'],
-        obs_velocity / ref_vars['velocity'],
-        error_xy / ref_vars['length'],
-        #fluid_force / ref_vars['force'],
-    ]
+    for rotatable_var in ["probes", "obs_v", "error", "fluid_force", "control_force"]:
+        xy = [value for key, value in inputs.items() if rotatable_var in key]
+        if not xy: continue
+        xy = rotate(torch.stack(xy), negative_angle)
+        keys = [key for key in inputs if rotatable_var in key]
+        for key, value in zip(keys, xy):
+            inputs[key] = value.view(-1)
+    # Transfer values of inputs to tensor
+    model_inputs = torch.cat(list(inputs.values())).view(1, 1, -1)
+    # Loss inputs
     loss_inputs = [
-        error_xy / ref_vars['length'],
-        obs_velocity / ref_vars['velocity'],
+        inputs["error_x"],
+        inputs["error_y"],
+        inputs["obs_vx"],
+        inputs["obs_vy"]
     ]
     if not translation_only:
-        model_inputs += [
-            error_angle / ref_vars['angle'],
-            #fluid_torque / ref_vars['torque'],
-            ang_velocity / ref_vars['ang_velocity']
-        ]
         loss_inputs += [
-            error_angle / ref_vars['angle'],
-            ang_velocity / ref_vars['ang_velocity']
+            inputs["error_angle"],
+            # inputs["fluid_torque"],
+            inputs["ang_velocity"]
         ]
-    return torch.cat(model_inputs).view(1, 1, -1), torch.cat(loss_inputs).view(1, -1)
+    loss_inputs = torch.cat(loss_inputs).view(1, -1)
+    # # Gather inputs
+    # probes_velocity = torch.stack([
+    #     sim.velocity.x.sample_at(probes.get_points_as_tensor()).native(),
+    #     sim.velocity.y.sample_at(probes.get_points_as_tensor()).native()
+    # ])
+    # error_xy = (x_objective - sim.obstacle.geometry.center).native()
+    # fluid_force = sim.fluid_force.native()
+    # obs_velocity = sim.obstacle.velocity.native()
+    # # Transfer values to local reference frame if rotation is present
+    # if not translation_only:
+    #     fluid_torque = math.sum(sim.fluid_torque).native().view(1) * 0  # TODO
+    #     error_angle = (angle_objective - (sim.obstacle.geometry.angle - PI / 2)).native().view(1)
+    #     negative_angle = (sim.obstacle.geometry.angle - math.PI / 2.0).native()
+    #     # negative_angle = torch.tensor(0)
+    #     probes_velocity = rotate(probes_velocity, negative_angle)
+    #     error_xy = rotate(error_xy, negative_angle)
+    #     fluid_force = rotate(fluid_force, negative_angle)
+    #     obs_velocity = rotate(obs_velocity, negative_angle)
+    # model_inputs = [
+    #     # probes_velocity[0] / ref_vars['velocity'],
+    #     # probes_velocity[1] / ref_vars['velocity'],
+    #     obs_velocity / ref_vars['velocity'],
+    #     error_xy / ref_vars['length'],
+    #     # fluid_force / ref_vars['force'],
+    # ]
+    # loss_inputs = [
+    #     error_xy / ref_vars['length'],
+    #     obs_velocity / ref_vars['velocity'],
+    # ]
+    # if not translation_only:
+    #     ang_velocity = sim.obstacle.angular_velocity.native().view(1)
+    # model_inputs += [
+    #     error_angle / ref_vars['angle'],
+    #     # fluid_torque / ref_vars['torque'],
+    #     ang_velocity / ref_vars['ang_velocity']
+    # ]
+    # loss_inputs += [
+    #     error_angle / ref_vars['angle'],
+    #     ang_velocity / ref_vars['ang_velocity']
+    # ]
+    # return torch.cat(model_inputs).view(1, 1, -1), torch.cat(loss_inputs).view(1, -1)
+    return model_inputs, loss_inputs
 
 
 def rotate(xy: torch.Tensor, angle: float):
@@ -135,23 +206,23 @@ def calculate_loss(loss_inputs: math.Tensor, hyperparams: dict, translation_only
     obs_velocity = loss_inputs[:, :, 2:4]
     delta_force = loss_inputs[:, :, 4:6]  # TODO CHECK THIS
     spatial_term = hyperparams['spatial'] * torch.sum(x_error**2)
-    # Other terms are pronounced only when spatial or angular error is low
+    # Other terms are pronounced only when spatial or angular error are low
     velocity_term = hyperparams['velocity'] * torch.sum(obs_velocity**2 / (x_error**2 * hyperparams['proximity'] + 1))
     if not translation_only:
         ang_error = loss_inputs[:, :, 4:5]
         angular_velocity = loss_inputs[:, :, 5:6]
         delta_force = loss_inputs[:, :, 6:8]
+        # delta_force2 = loss_inputs[:, :, 8:10]  # TODO
         delta_torque = loss_inputs[:, :, 8:9]
         ang_term = hyperparams['angle'] * torch.sum(ang_error**2 / (torch.sum(x_error**2, 2, keepdim=True) * hyperparams['proximity'] + 1))
         ang_vel_term = hyperparams['ang_velocity'] * torch.sum(angular_velocity**2 / (ang_error**2 * hyperparams['proximity'] + 1))
         # Avoid abrupt changes
         torque_term = hyperparams['delta_torque'] * torch.sum(delta_torque**2)
-        # force_term = 0.025 * torch.sum(delta_force**2)
-        # torque_term = 0.025 * torch.sum(delta_torque**2)
+        # force2_term = hyperparams['delta_force'] * torch.sum(delta_force2**2)  # TODO
     else:
         ang_term = ang_vel_term = torque_term = torch.tensor(0)
     force_term = hyperparams['delta_force'] * torch.sum(delta_force**2)
-    loss = spatial_term + velocity_term + ang_term + ang_vel_term + force_term + torque_term
+    loss = spatial_term + velocity_term + ang_term + ang_vel_term + force_term + torque_term  # + force2_term
     loss_terms = dict(
         spatial=spatial_term,
         velocity=velocity_term,
@@ -159,6 +230,7 @@ def calculate_loss(loss_inputs: math.Tensor, hyperparams: dict, translation_only
         ang_vel=ang_vel_term,
         force=force_term,
         torque=torque_term
+        # force2=force2_term  # TODO
     )
     return loss, loss_terms
 
@@ -204,3 +276,12 @@ def log_value(filepath: str, values: Iterable, should_delete: bool):
     with open(filepath, 'a+') as f:
         for value in values:
             f.write(f"{value} ")
+
+
+def get_weights_and_biases(model):
+    weights = {}
+    biases = {}
+    for i, layer in enumerate(model.layers):
+        weights[f'layer_{i}_W'] = layer.weight.detach()
+        biases[f'layer_{i}_b'] = layer.bias.detach()
+    return weights, biases
