@@ -415,4 +415,4 @@ def train_model(name: str, log_dir: str, n_timesteps: int, **agent_kwargs) -> SA
 
 if __name__ == '__main__':
     #train_model('128_128_128_3e-4_2grst_bs128_angvelpen_rewnorm_test', 'hparams_tuning', 20000, batch_size=128, learning_starts=32, learning_rate=3e-4, gradient_steps=2, policy_kwargs=dict(net_arch=[128, 128, 128]))
-    train_model('simple_env_norewnorm_noskipstack_2', 'simple_env', 150000, batch_size=128, learning_starts=32, policy_kwargs=dict(net_arch=[64, 64]))
+    train_model('simple_env_norewnorm_noskipstack_3', 'simple_env', 150000, batch_size=128, learning_starts=32, policy_kwargs=dict(net_arch=[64, 64]))
