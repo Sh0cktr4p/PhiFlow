@@ -66,11 +66,11 @@ def extract_inputs(sim: TwoWayCouplingSimulation, probes: Probes, x_objective: t
     obs_velocity = rotate(obs_velocity, negative_angle)
 
     model_inputs = [
-        probes_velocity[0] / ref_vars['velocity'],
-        probes_velocity[1] / ref_vars['velocity'],
+        #probes_velocity[0] / ref_vars['velocity'],
+        #probes_velocity[1] / ref_vars['velocity'],
         obs_velocity / ref_vars['velocity'],
         error_xy / ref_vars['length'],
-        fluid_force / ref_vars['force'],
+        #fluid_force / ref_vars['force'],
     ]
     loss_inputs = [
         error_xy / ref_vars['length'],
@@ -79,7 +79,7 @@ def extract_inputs(sim: TwoWayCouplingSimulation, probes: Probes, x_objective: t
     if not translation_only:
         model_inputs += [
             error_angle / ref_vars['angle'],
-            fluid_torque / ref_vars['torque'],
+            #fluid_torque / ref_vars['torque'],
             ang_velocity / ref_vars['ang_velocity']
         ]
         loss_inputs += [

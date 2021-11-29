@@ -1,5 +1,6 @@
 from gym import Env
 from reinforcement_learning.envs.skip_stack_wrapper import SkipStackWrapper
+from reinforcement_learning.envs.seed_on_reset_wrapper import SeedOnResetWrapper
 from reinforcement_learning.envs.two_way_coupling_env import TwoWayCouplingConfigEnv
 from stable_baselines3.sac import SAC
 import os
@@ -13,7 +14,6 @@ def evaluate_model(model: SAC, env: Env):
         step = 0
         cum_rew = 0
         done = False
-        env.seed(0)
         obs = env.reset()
 
         while not done:
@@ -29,13 +29,13 @@ def evaluate_model(model: SAC, env: Env):
 
 if __name__ == '__main__':
     config_path = os.path.join(os.path.dirname(__file__), os.pardir, 'inputs.json')
-    model_path = os.path.join(os.path.dirname(__file__), os.pardir, 'storage', 'networks', '32_24_16_3e-4_2grst_bs128_angvelpen_rewnorm_full_obs_long')
+    model_path = os.path.join(os.path.dirname(__file__), os.pardir, 'storage', 'networks', '64_32_3e-4_bs128_angvelpen_rewnorm_small_obs_seeded_2')
 
     print(f"loading model from {model_path}")
 
     env = TwoWayCouplingConfigEnv(config_path)
     env = SkipStackWrapper(env, skip=8, stack=4)
+    env = SeedOnResetWrapper(env, 1000)
     model = SAC.load(model_path)
-    env.seed(0)
 
     evaluate_model(model, env)

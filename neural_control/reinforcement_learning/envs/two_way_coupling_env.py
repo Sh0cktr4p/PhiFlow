@@ -153,7 +153,7 @@ class TwoWayCouplingEnv(Env):
             obs[np.isnan(obs)] = 0
             done = True
 
-        if np.abs(self.sim.angular_velocity.numpy()) > self.ref_vars['max_ang_vel']:
+        if np.abs(self.sim.obstacle.angular_velocity.numpy()) > self.ref_vars['max_ang_vel']:
             print('Hit maximum angular velocity, ending trajectory')
             done = True
 
@@ -321,6 +321,8 @@ def get_env(skip: int=8, stack: int=4) -> Env:
     env = RewNormWrapper(env, None)
     env = SeedOnResetWrapper(env)
     env = Monitor(env, info_keywords=('rew_unnormalized',))
+
+    print('Observation space shape: %s' % str(env.observation_space.shape))
         
     return env
     
@@ -354,4 +356,4 @@ def train_model(name: str, log_dir: str, n_timesteps: int, **agent_kwargs) -> SA
 
 if __name__ == '__main__':
     #train_model('128_128_128_3e-4_2grst_bs128_angvelpen_rewnorm_test', 'hparams_tuning', 20000, batch_size=128, learning_starts=32, learning_rate=3e-4, gradient_steps=2, policy_kwargs=dict(net_arch=[128, 128, 128]))
-    train_model('32_24_16_3e-4_2grst_bs128_angvelpen_rewnorm_full_obs_seeded_3', 'hparams_tuning', 60000, batch_size=128, learning_starts=32, learning_rate=3e-4, gradient_steps=2, policy_kwargs=dict(net_arch=[32, 24, 16]))
+    train_model('64_32_3e-4_bs128_angvelpen_rewnorm_small_obs_seeded_2', 'hparams_tuning', 60000, batch_size=128, learning_starts=32, policy_kwargs=dict(net_arch=[64, 32]))

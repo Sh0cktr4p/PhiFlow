@@ -15,7 +15,7 @@
     "probes_size": 4,
     "online": {
         "simulation_path": "simple_simulation/", 
-        "export_path": "full_obs_long/",
+        "export_path": "best_so_far_probably/",
         "destinations_zone_growrate": 0.05,
         "n_steps": 1000,
         "n_cases": 100,
