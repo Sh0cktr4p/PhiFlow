@@ -1,6 +1,6 @@
 {
-    "dataPath": "/home/felix/Code/HiWi/Brener/PhiFlow/neural_control/storage/simulation_data/",
-    "sModel": "sanity_check",
+    "dataPath": "/home/felix/Documents/GuidedResearch/rl_2/tests/",
+    "sModel": "test1_0",
     "sVar": [
         "obs_mask",
         "vorticity",
@@ -152,7 +152,7 @@
         1,
         1,
         0,
-        1,
+        0,
         0,
         0,
         0,

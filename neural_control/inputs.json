@@ -24,7 +24,7 @@
     ],
     "online": {
         "simulation_path": "simple_simulation_2/", 
-        "export_path": "sanity_check/",
+        "export_path": "one_ep_training/",
         "destinations_zone_growrate": 0.33,
         "n_timesteps": 1000,
         "simulation_dropout": 1.0,
