@@ -1,6 +1,7 @@
 from gym import Env
 from reinforcement_learning.envs.seed_on_reset_wrapper import SeedOnResetWrapper
 from reinforcement_learning.envs.skip_stack_wrapper import SkipStackWrapper
+from reinforcement_learning.envs.seed_on_reset_wrapper import SeedOnResetWrapper
 from reinforcement_learning.envs.two_way_coupling_env import TwoWayCouplingConfigEnv
 from stable_baselines3.sac import SAC
 import os
