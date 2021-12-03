@@ -1,10 +1,11 @@
 import time
 import argparse
-from supervised.Dataset import Dataset
+from Dataset import Dataset
 from InputsManager import InputsManager
 from misc_funcs import *
 from InputsManager import RLInputsManager
-from reinforcement_learning.extract_model import SACActorModule, load_sac_torch_module
+from reinforcement_learning.extract_model import load_sac_torch_module, SACActorModule
+
 CUDA_LAUNCH_BLOCKING = 1
 torch.set_printoptions(sci_mode=True)
 
@@ -59,7 +60,7 @@ if __name__ == "__main__":
             tests.export(export_path + "tests.json", only=[test_label, "dataset_path", "tvt_ratio"])
             # Set simulation and probes parameters
             sim = TwoWayCouplingSimulation(inp.device, inp.translation_only)
-            sim.set_initial_conditions( # TODO check with less inputs
+            sim.set_initial_conditions(
                 inp.simulation["obs_type"],
                 inp.simulation['obs_width'],
                 inp.simulation['obs_height'],
@@ -113,6 +114,7 @@ if __name__ == "__main__":
                     # control_force_global2 = torch.zeros(2).to(device)  # TODO
                     control_torque = torch.zeros(1).to(device)
                     # Initialize simulation
+                    print(test_attrs)
                     smoke_attrs = test_attrs['smoke']
                     sim.setup_world(
                         inp.simulation["re"],
@@ -153,9 +155,9 @@ if __name__ == "__main__":
                                 # control_effort = torch.clamp(control_effort, -1., 1.)
                             control_force = control_effort[0, :2]
                             control_force_global = control_force
-                            angle_tensor = -(sim.obstacle.geometry.angle * 0 - math.PI / 2.0).native()
-                            control_force_global = rotate(control_force_global, angle_tensor)
                             if not inp.translation_only:
+                                angle_tensor = -(sim.obstacle.geometry.angle - math.PI / 2.0).native()
+                                control_force_global = rotate(control_force_global, angle_tensor)
                                 control_torque = control_effort[0, -1:]
                             #     control_force2 = control_effort[0, 2:] * torch.as_tensor((0, 1)).cuda()  # TODO
                             #     control_force_global2 = rotate(control_force2, angle_tensor)  # Control force at global reference of frame (used for visualization only)

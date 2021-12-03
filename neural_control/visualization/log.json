@@ -1,9 +1,9 @@
 {
-    "dataPath": "/home/felix/Documents/GuidedResearch/rl_2/tests/",
+    "dataPath": "/home/felix/Documents/GuidedResearch/DefaultTraining/tests/",
     "sModel": "test1_0",
     "sVar": [
         "obs_mask",
-        "vorticity",
+        "pressure",
         "obs_xy",
         "fluid_force_x",
         "fluid_force_y",

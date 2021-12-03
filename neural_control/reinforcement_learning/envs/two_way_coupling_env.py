@@ -232,15 +232,15 @@ class TwoWayCouplingEnv(Env):
         self.epis_idx -= 1  # Account for reset function call
         return Box(-np.inf, np.inf, shape=shape, dtype=np.float32)
 
-    def _extract_inputs(self) -> Tuple[np.ndarray, np.ndarray]:
+    def _extract_inputs(self) -> Tuple[np.ndarray, dict]:
         obs, loss = extract_inputs(self.input_vars, self.sim, self.probes, self.pos_objective, self.ang_objective, self.ref_vars, self.translation_only)
-        return obs.cpu().numpy().reshape(-1), loss.cpu().numpy().reshape(-1)
+        return obs.cpu().numpy().reshape(-1), loss
 
     def _get_obs(self) -> np.ndarray:
         return self._extract_inputs()[0]
 
-    def _get_rew(self, loss_inputs: np.ndarray, baseline: np.ndarray, done: bool) -> np.ndarray:
-        self.pos_error = loss_inputs[0:2]
+    def _get_rew(self, loss_inputs: dict, baseline: np.ndarray, done: bool) -> np.ndarray:
+        self.pos_error = np.array([val.cpu().numpy() for val in [loss_inputs[key] for key in ['error_x', 'error_y']]])
 
         pos_rew = -1 * np.sum(self.pos_error ** 2)
 

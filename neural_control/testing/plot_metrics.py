@@ -170,4 +170,4 @@ if __name__ == '__main__':
     fig[3].update_layout(yaxis_title='Force max')
     # Show plots
     for i, fig_ in enumerate(fig):
-        fig_.write_html(f"/home/ramos/phiflow/neural_control/testing/fig{i}.html")
+        fig_.write_html(f"/home/felix/Code/HiWi/Brener/PhiFlow/neural_control/storage/figures/fig{i}.html")

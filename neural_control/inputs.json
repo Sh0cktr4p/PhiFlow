@@ -24,7 +24,7 @@
     ],
     "online": {
         "simulation_path": "simple_simulation_2/", 
-        "export_path": "one_ep_training/",
+        "export_path": "short_episodes_training/",
         "destinations_zone_growrate": 0.33,
         "n_timesteps": 1000,
         "simulation_dropout": 1.0,
@@ -76,7 +76,7 @@
         "n_steps": 101,
         "re": 1000,
         "tripping_on": false,
-        "obs_density": 1.5,
+        "obs_density": 0.15,
         "reference_velocity": 1,
         "inflow_on": false,
         "two_obstacles": false,
