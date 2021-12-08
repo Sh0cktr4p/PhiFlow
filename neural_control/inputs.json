@@ -18,9 +18,7 @@
         "obs_vx",
         "obs_vy",
         "error_x",
-        "error_y",
-        "control_force_x",
-        "control_force_y"
+        "error_y"
     ],
     "online": {
         "simulation_path": "simple_simulation_2/", 
