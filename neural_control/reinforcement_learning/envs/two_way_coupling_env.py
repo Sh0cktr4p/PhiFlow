@@ -232,15 +232,15 @@ class TwoWayCouplingEnv(Env):
         self.epis_idx -= 1  # Account for reset function call
         return Box(-np.inf, np.inf, shape=shape, dtype=np.float32)
 
-    def _extract_inputs(self) -> Tuple[np.ndarray, np.ndarray]:
+    def _extract_inputs(self) -> Tuple[np.ndarray, dict]:
         obs, loss = extract_inputs(self.input_vars, self.sim, self.probes, self.pos_objective, self.ang_objective, self.ref_vars, self.translation_only)
-        return obs.cpu().numpy().reshape(-1), loss.cpu().numpy().reshape(-1)
+        return obs.cpu().numpy().reshape(-1), loss
 
     def _get_obs(self) -> np.ndarray:
         return self._extract_inputs()[0]
 
-    def _get_rew(self, loss_inputs: np.ndarray, baseline: np.ndarray, done: bool) -> np.ndarray:
-        self.pos_error = loss_inputs[0:2]
+    def _get_rew(self, loss_inputs: dict, baseline: np.ndarray, done: bool) -> np.ndarray:
+        self.pos_error = np.array([val.cpu().numpy() for val in [loss_inputs[key] for key in ['error_x', 'error_y']]])
 
         pos_rew = -1 * np.sum(self.pos_error ** 2)
 
@@ -415,4 +415,4 @@ def train_model(name: str, log_dir: str, n_timesteps: int, **agent_kwargs) -> SA
 
 if __name__ == '__main__':
     #train_model('128_128_128_3e-4_2grst_bs128_angvelpen_rewnorm_test', 'hparams_tuning', 20000, batch_size=128, learning_starts=32, learning_rate=3e-4, gradient_steps=2, policy_kwargs=dict(net_arch=[128, 128, 128]))
-    train_model('short_episodes', 'simple_env', 150000, batch_size=128, learning_starts=32, policy_kwargs=dict(net_arch=[64, 64]))
+    train_model('episodes_300st', 'simple_env', 300000, batch_size=128, learning_starts=32, policy_kwargs=dict(net_arch=[64, 64]))
