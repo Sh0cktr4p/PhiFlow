@@ -1,6 +1,6 @@
 {
-    "dataPath": "/home/felix/Documents/GuidedResearch/DefaultTraining/tests/",
-    "sModel": "test1_0",
+    "dataPath": "/home/felix/Documents/GuidedResearch/",
+    "sModel": "300st",
     "sVar": [
         "obs_mask",
         "pressure",
