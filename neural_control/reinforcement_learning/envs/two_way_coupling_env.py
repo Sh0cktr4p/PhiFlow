@@ -22,7 +22,7 @@ from InputsManager import InputsManager
 from misc.TwoWayCouplingSimulation import TwoWayCouplingSimulation
 from misc_funcs import extract_inputs, Probes, prepare_export_folder, rotate
 from reinforcement_learning.envs.rew_norm_wrapper import RewNormWrapper
-from reinforcement_learning.envs.skip_stack_wrapper import SkipStackWrapper
+from reinforcement_learning.envs.skip_stack_wrapper import SkipStackWrapper, BrenerStacker
 from reinforcement_learning.envs.seed_on_reset_wrapper import SeedOnResetWrapper
 from reinforcement_learning.callbacks import EveryNRolloutsPlusStartFinishFunctionCallback, RecordInfoScalarsCallback
 
@@ -143,8 +143,6 @@ class TwoWayCouplingEnv(Env):
     def step(self, action: np.ndarray) -> Tuple[np.ndarray, np.ndarray, bool, Dict[str, Any]]:
         self.step_idx += 1
         self.forces, self.torque = self._split_action_to_force_torque(action)
-        if self.translation_only:
-            self.torque *= 0
         self.forces = self._to_global(self.forces)
 
         self.sim.apply_forces(self.forces * self.ref_vars['force'], self.torque * self.ref_vars['torque'])
@@ -225,7 +223,10 @@ class TwoWayCouplingEnv(Env):
         return pos_objective.to(self.sim.device), ang_objective.to(self.sim.device)
 
     def _get_action_space(self) -> Box:
-        return Box(-1, 1, shape=(3,), dtype=np.float32)
+        dim = 2
+        if not self.translation_only:
+            dim += 1
+        return Box(-1, 1, shape=(dim,), dtype=np.float32)
 
     def _get_observation_space(self) -> Box:
         shape = self.reset().shape
@@ -277,8 +278,8 @@ class TwoWayCouplingEnv(Env):
 
     def _split_action_to_force_torque(self, action: np.ndarray) -> Tuple[torch.Tensor, torch.Tensor]:
         control_effort = torch.tensor(action).to(self.sim.device)
-        #control_effort = torch.clamp(control_effort, -1, 1)    # TODO
-        return control_effort[:2], control_effort[-1:]
+        torque = torch.tensor([0]).to(self.sim.device) if self.translation_only else control_effort[-1:]
+        return control_effort[:2], torque
 
     def _to_global(self, force: torch.Tensor) -> torch.Tensor:
         return rotate(force, -1 * self._obstacle_angle)
@@ -377,6 +378,7 @@ def get_env(skip: int=8, stack: int=4) -> Env:
     inputs_path = os.path.join(os.path.dirname(__file__), os.pardir, os.pardir, 'inputs.json')
     
     env = TwoWayCouplingConfigEnv(inputs_path)
+    env = BrenerStacker(env, 4, 4, 2, True)
     #env = SkipStackWrapper(env, skip=skip, stack=stack)
     #env = RewNormWrapper(env, None)
     env = SeedOnResetWrapper(env)
@@ -415,4 +417,4 @@ def train_model(name: str, log_dir: str, n_timesteps: int, **agent_kwargs) -> SA
 
 if __name__ == '__main__':
     #train_model('128_128_128_3e-4_2grst_bs128_angvelpen_rewnorm_test', 'hparams_tuning', 20000, batch_size=128, learning_starts=32, learning_rate=3e-4, gradient_steps=2, policy_kwargs=dict(net_arch=[128, 128, 128]))
-    train_model('episodes_300st', 'simple_env', 300000, batch_size=128, learning_starts=32, policy_kwargs=dict(net_arch=[64, 64]))
+    train_model('episodes_300st', 'simple_env', 300000, batch_size=128, learning_starts=32, policy_kwargs=dict(net_arch=[38, 38]))

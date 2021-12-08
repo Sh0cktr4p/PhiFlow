@@ -38,7 +38,7 @@ def load_sac_torch_module(path: str) -> SACActorModule:
 
 
 if __name__ == '__main__':
-    store_sac_actor_as_torch_module('neural_control/storage/networks/simple_env_norewnorm_noskipstack_3.zip', '../../../../Documents/GuidedResearch/DefaultTraining/trained_model_0000.pth')
+    store_sac_actor_as_torch_module('neural_control/storage/networks/episodes_300st', '../../../../Documents/GuidedResearch/300st/trained_model_0000.pth')
     exit()
     from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
 
