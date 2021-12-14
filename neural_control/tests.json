@@ -420,7 +420,7 @@
                 0
             ]
         },
-        "initial_conditions_path": "/home/ramos/phiflow/storage/baseline_simple_noinflow2/",
+        "initial_conditions_path": "/home/felix/Code/HiWi/Brener/PhiFlow/neural_control/storage/simulation_data/simple_simulation_2/",
         "n_simulations": 20
     },
     "test2": {

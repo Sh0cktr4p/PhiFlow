@@ -28,6 +28,7 @@ if __name__ == "__main__":
     elif "supervised" in inp.__dict__.keys(): model_type = "supervised"
     elif "rl" in inp.__dict__.keys(): model_type = "rl"
     else: raise ValueError("Unknown model type")
+    print(f"Using {model_type} model type")
     # Set device
     if inp.device == "GPU":
         TORCH_BACKEND.set_default_device("GPU")
@@ -75,8 +76,9 @@ if __name__ == "__main__":
         # ----------------------------------------------
         # ------------------- Setup NN -----------------
         # ----------------------------------------------
-        sampling_stride = inp.training_dt / inp.simulation["dt"]  # In case model has a different sampling than simulation step
-        assert sampling_stride.is_integer()
+        #sampling_stride = inp.training_dt / inp.simulation["dt"]  # In case model has a different sampling than simulation step
+        sampling_stride = 1 # TODO
+        #assert sampling_stride.is_integer() # TODO
         # Load model
         if model_type == "rl":
             model = load_sac_torch_module(model_path).to(device)
@@ -94,8 +96,8 @@ if __name__ == "__main__":
         # dataset.set_past_window_size(inp.past_window)
         # dataset.set_mode("validation")
         # Initialize inputs manager for reinforcement learning model
-        if model_type == "rl":
-            rl_inp = RLInputsManager(inp.past_window, inp.n_past_features, inp.rl['n_snapshots_per_window'], device)
+        #if model_type == "rl":
+        #    rl_inp = RLInputsManager(inp.past_window, inp.n_past_features, inp.rl['n_snapshots_per_window'], device)
         # Save a copy of the model that will be used for tests
         torch.save(model, os.path.abspath(f"{export_path}{model_path.split('/')[-1]}"))
         # ----------------------------------------------
@@ -146,9 +148,11 @@ if __name__ == "__main__":
                     if i % sampling_stride == 0:
                         nn_inputs_present, loss_inputs = extract_inputs(inp.nn_vars, sim, probes, x_objective, ang_objective, ref_vars, inp.translation_only)
                         if model_type == "rl":
-                            rl_inp.add_snapshot(nn_inputs_present.view(1, -1))
+                            #rl_inp.add_snapshot(nn_inputs_present.view(1, -1))
                             # if i % inp.rl['n_snapshots_per_window'] == 0:
-                            control_effort = model(rl_inp.values.view(1, -1))
+                            #control_effort = model(rl_inp.values.view(1, -1))
+                            model_input = torch.cat((nn_inputs_past.view(1, -1), nn_inputs_present.view(1, -1)), dim=1).to(nn_inputs_present.device)
+                            control_effort = model(model_input)
                         else:
                             control_effort = model(nn_inputs_present.view(1, -1), nn_inputs_past.view(1, -1) if inp.past_window else None)
                             # control_effort = torch.clamp(control_effort, -2., 2.)
