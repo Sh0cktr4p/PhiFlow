@@ -5,6 +5,8 @@ from matplotlib import animation, use
 from cycler import cycler
 from itertools import cycle
 import seaborn as sns
+import mimic_alpha as ma
+import matplotlib
 
 
 class Plotter():
@@ -34,7 +36,7 @@ class Plotter():
         self.colors = cycle([u'#1f77b4', u'#ff7f0e', u'#2ca02c', u'#d62728', u'#9467bd', u'#8c564b', u'#e377c2', u'#7f7f7f', u'#bcbd22', u'#17becf'])
         use('qt5agg')
         # Make plot iteractive
-        plt.ion()
+        # plt.ion()
 
     def set_export_path(self, path: str):
         """
@@ -96,14 +98,21 @@ class Plotter():
         if id not in self.figs:
             fig, ax = plt.subplots(1, 1, figsize=self.figsize, constrained_layout=constrained_layout)
             # plt.tight_layout()
-            ax.set_rasterized(True)
+            # ax.set_rasterized(True)
             self.figs[id] = {'fig': fig, 'ax': ax}
         else:
             fig = self.figs[id]['fig']
             ax = self.figs[id]['ax']
         return fig, ax
 
-    def imshow(self, data_ids: list = [None], plot_id: str = None, export_filename: str = None, transpose: bool = False, **kwargs):
+    def imshow(self,
+               data_ids: list = [None],
+               plot_id: str = None,
+               export_filename: str = None,
+               transpose: bool = False,
+               create_cbar: bool = True,
+               create_title: bool = True,
+               **kwargs):
         """
         Create imshow plot of data with ids in data_ids. If data_ids is None, then all data that admits imshow will be used.
 
@@ -135,8 +144,8 @@ class Plotter():
                 image = ax.imshow(np.transpose(data['values']), **merged_kwargs)
             else:
                 image = ax.imshow(data['values'], **merged_kwargs)
-            ax.set_title(id)
-            cbar = fig.colorbar(image, ax=ax)
+            if create_title: ax.set_title(id)
+            cbar = fig.colorbar(image, ax=ax) if create_cbar else None
             export_filename_ = id if export_filename is None else export_filename
             if self.should_export:
                 self.export(fig, export_filename_)
@@ -245,7 +254,8 @@ class Plotter():
             # Fill between (working only with 1D)
             if fill_between is not None and data['dim'] == '1D':
                 offset = fill_between[id]['offset']
-                ax.fill_between(line[0].get_xdata(), data['values'] - offset, data['values'] + offset, color=line[0].get_color(), **fill_between[id]['kwargs'])
+                color = ma.colorAlpha_to_rgb([line[0].get_color()], fill_between[id]['kwargs'].pop('alpha', 1))[0]  # Hack to simulate transparency
+                ax.fill_between(line[0].get_xdata(), data['values'] - offset, data['values'] + offset, color=color, **fill_between[id]['kwargs'])
             export_filename_ = id if export_filename is None else export_filename
             if self.should_export:
                 self.export(fig, export_filename_)
