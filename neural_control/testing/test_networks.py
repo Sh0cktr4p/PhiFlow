@@ -154,7 +154,8 @@ if __name__ == "__main__":
                             model_input = torch.cat((nn_inputs_past.view(1, -1), nn_inputs_present.view(1, -1)), dim=1).to(nn_inputs_present.device)
                             control_effort = model(model_input)
                         else:
-                            control_effort = model(nn_inputs_present.view(1, -1), nn_inputs_past.view(1, -1) if inp.past_window else None, inp.bypass_tanh)
+                            control_effort = model(nn_inputs_present.view(1, -1), nn_inputs_past.view(1, -1) if inp.past_window else None)
+                            #control_effort = model(nn_inputs_present.view(1, -1), nn_inputs_past.view(1, -1) if inp.past_window else None, inp.bypass_tanh)
                             # control_effort = torch.clamp(control_effort, -2., 2.)
                         control_force = control_effort[0, :2]
                         control_force_global = control_force

@@ -1,12 +1,12 @@
 {
-    "translation_only": false,
+    "translation_only": true,
     "architecture": "fc_only",
-    "past_window": 3,
+    "past_window": 2,
     "resume_training": false,
     "export_stride": 8,
     "max_acc": 1.0,
     "max_vel": 3.0,
-    "max_ang_acc": 0.05,
+    "max_ang_acc": 0.025,
     "max_ang_vel": 0.75,
     "device": "GPU",
     "probes_n_rows": 2,
@@ -33,19 +33,19 @@
         "model_export_stride": 500,
         "optimizer": "AdamW",
         "destinations_margins": [
-            50,
-            25
+            20,
+            20
         ],
         "hyperparams": {
             "spatial": 15,
             "velocity": 5,
-            "force": 0.1,
-            "delta_force": 0.1,
+            "force": 0.5,
+            "delta_force": 0.0,
             "torque": 0.1,
-            "angle": 15,
-            "ang_velocity": 1,
-            "delta_torque": 0.1,
-            "proximity": 0.5
+            "angle": 30,
+            "ang_velocity": 0.2,
+            "delta_torque": 0.025,
+            "proximity": 0.1
         }
     },
     "supervised": {
@@ -76,37 +76,28 @@
     },
     "simulation": {
         "path": "/home/trost/guided_research/PhiFlow/neural_control/storage/simulation_data/simple_simulation_2/",
-        "n_steps": 7501,
-        "re": 5000,
+        "n_steps": 501,
+        "re": 1000,
         "tripping_on": false,
-        "obs_density": 0.3,
-        "reference_velocity": 3,
-        "inflow_on": true,
-        "dt": 0.05,
-        "obs_type": "box",
-        "obs_width": 20,
-        "obs_height": 6,
+        "obs_density": 0.15,
+        "reference_velocity": 1,
+        "inflow_on": false,
+        "dt": 0.1,
+        "obs_type": "disc",
+        "obs_width": 5,
+        "obs_height": 5,
         "time_step_scheme": "RK2",
-        "second_obstacle": {
-            "xy": [
-                35,
-                50
-            ],
-            "ang_vel": 0.2,
-            "width": 5,
-            "height": 30
-        },
         "domain_size": [
-            175,
-            110
+            80,
+            80
         ],
         "obs_xy": [
-            120,
-            50
+            40,
+            40
         ],
-        "sponge_intensity": 0.05,
+        "sponge_intensity": 0.01,
         "sponge_size": [
-            0,
+            5,
             5,
             5,
             5
