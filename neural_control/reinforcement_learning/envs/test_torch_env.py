@@ -1,6 +1,7 @@
 from typing import Any, Dict, List, Optional, Tuple
 import torch
 import numpy as np
+import shutil
 from misc.TwoWayCouplingSimulation import TwoWayCouplingSimulation
 from misc_funcs import extract_inputs, Probes, prepare_export_folder, rotate
 from gym import Env
@@ -8,6 +9,7 @@ from gym.spaces import Box
 from phi import math
 import os
 from InputsManager import InputsManager
+
 
 class TwoWayCouplingTorchEnv(Env):
     def __init__(
@@ -96,7 +98,6 @@ class TwoWayCouplingTorchEnv(Env):
     def _obstacle_angle(self) -> torch.Tensor:
         return self.sim.obstacle.geometry.angle.native() - math.PI / 2.0
 
-
     def reset(self)-> torch.Tensor:
         self.step_idx = 0
         self.epis_idx += 1
@@ -113,13 +114,12 @@ class TwoWayCouplingTorchEnv(Env):
         )
         self.pos_objective, self.ang_objective = self._generate_objectives()
         obs, loss = self._extract_inputs()
-        rew_baseline = self._get_rew(loss, False)
-        #self.rew_baseline 
+        self.rew_baseline = self._get_rew(loss, False)
         return obs
 
     def step(self, action: torch.Tensor)-> Tuple[torch.Tensor, torch.Tensor, bool, Dict[str, Any]]:
         self.step_idx += 1
-        self.forces, self.torque = self._split_action_to_force_torque(action)
+        self.forces, self.torque = self._split_action_to_force_torque(action.to(self.sim.device))
         self.forces = self._to_global(self.forces)
 
         self.sim.apply_forces(self.forces * self.ref_vars['force'], self.torque * self.ref_vars['torque'])
@@ -145,7 +145,40 @@ class TwoWayCouplingTorchEnv(Env):
         return obs, self.rew, done, info
 
     def render(self):
-        pass
+        if not self.export_folder_created:
+            self.epis_idx = 0       # Reset episode index for interactive data reader to work properly
+            shutil.rmtree(f"{self.sim_export_path}/tensorboard", ignore_errors=True)
+            prepare_export_folder(self.sim_export_path, self.step_idx)
+            self.export_folder_created = True
+        
+        probes_points = self.probes.get_points_as_tensor()
+        self.sim.probes_points = probes_points.native().detach()
+        self.sim.probes_vx = self.sim.velocity.x.sample_at(probes_points).native().detach()
+        self.sim.probes_vy = self.sim.velocity.y.sample_at(probes_points).native().detach()
+        self.sim.control_force_x, self.sim.control_force_y = self.forces.detach().clone() * self.ref_vars['force']
+        self.sim.control_torque = self.torque.detach().clone() * self.ref_vars['torque']
+        self.sim.reference_x = self.pos_objective[0].detach().clone()
+        self.sim.reference_y = self.pos_objective[1].detach().clone()
+        self.sim.reference_angle = self.ang_objective.detach().clone()
+        self.sim.error_x = self.pos_error[0]
+        self.sim.error_y = self.pos_error[1]
+        if not self.translation_only:
+            self.sim.error_ang = self.ang_error
+        self.sim.reward = self.rew
+
+        #print("Episode %i step %i (%i)" % (self.epis_idx, self.step_idx // self.export_stride, self.step_idx))
+        
+        self.sim.export_data(
+            self.sim_export_path, 
+            self.epis_idx, 
+            self.step_idx // self.export_stride, 
+            self.export_vars, 
+            (self.epis_idx==0 and self.step_idx == 0)
+        )
+
+    def seed(self, seed=0) -> None:
+        print("this is seed, yo")
+        torch.manual_seed(seed)
 
     def _get_action_space(self) -> Box:
         dim = 2
@@ -167,7 +200,7 @@ class TwoWayCouplingTorchEnv(Env):
 
     def _extract_inputs(self) -> Tuple[torch.Tensor, dict]:
         obs, loss = extract_inputs(self.input_vars, self.sim, self.probes, self.pos_objective, self.ang_objective, self.ref_vars, self.translation_only)
-        return obs, loss
+        return obs.reshape(-1), loss
 
     def _get_rew(self, loss_inputs: dict, done: bool, baseline: Optional[torch.Tensor]=None) -> torch.Tensor:
         self.pos_error = torch.stack([loss_inputs[key] for key in ['error_x', 'error_y']])
