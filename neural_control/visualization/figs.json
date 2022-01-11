@@ -7,10 +7,7 @@
     },
     "error_xy_test1": {
         "runs": {
-            "PID": "/home/ramos/phiflow/storage/simple/pid/",
-            "LS": "/home/ramos/phiflow/storage/simple/loop_shaped/",
-            "Supervised": "/home/ramos/phiflow/storage/simple/supervised/",
-            "Online 11": "/home/ramos/phiflow/storage/simple/online_11/"
+            "RL": "/home/felix/Documents/GuidedResearch/BrenerSetupMorePowerLongEps/"
         },
         "test": "test1",
         "all_models": true,

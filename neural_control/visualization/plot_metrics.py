@@ -25,6 +25,7 @@ with open(os.path.abspath(os.path.dirname(os.path.abspath(__file__)) + '/figs.js
 parser = argparse.ArgumentParser(description='Plot metrics')
 parser.add_argument('--figs', type=str, nargs='+', required=False, default=None)  # Default is to plot all figs
 figs_to_plot = parser.parse_args().figs
+print("figs to plot: ", figs_to_plot)
 if figs_to_plot is not None:
     for fig in list(figs_attrs.keys()):
         if fig in [*figs_to_plot, 'global']: continue
@@ -36,6 +37,7 @@ for fig_name, attrs in loop_dict.items():
     p = Plotter((figs_attrs['global']['width'], figs_attrs['global']['height']))
     data_ids = []
     for run_label, run_path in attrs['runs'].items():
+        print(run_path)
         # Pre process variables
         tests = natsorted([test for test in os.listdir(run_path + '/tests') if attrs['test'] in test])
         for test in tests:
