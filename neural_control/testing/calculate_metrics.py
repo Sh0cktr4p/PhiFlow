@@ -131,14 +131,14 @@ def execute(run_path):
             vars=["reference_x", "reference_y"],
             func=remove_repeated
         ),
-        angle=dict(
-            vars=["obs_ang"],
-            func=lambda alpha: ((alpha.swapaxes(1, 2),), ('',)),
-        ),
-        objective_angle=dict(
-            vars=["reference_ang"],
-            func=lambda alpha: ((alpha.swapaxes(1, 2),), ('',)),
-        ),
+        #angle=dict(
+        #    vars=["obs_ang"],
+        #    func=lambda alpha: ((alpha.swapaxes(1, 2),), ('',)),
+        #),
+        #objective_angle=dict(
+        #    vars=["reference_ang"],
+        #    func=lambda alpha: ((alpha.swapaxes(1, 2),), ('',)),
+        #),
         x=dict(
             vars=["obs_xy"],
             func=lambda xy: ((xy[..., 0:1].swapaxes(1, 2),), ('',)),

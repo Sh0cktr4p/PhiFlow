@@ -2,7 +2,7 @@
     "global": {
         "width": 5,
         "height": 5,
-        "export_path": "/home/ramos/phiflow/figs/",
+        "export_path": "/home/felix/Code/HiWi/Brener/PhiFlow/neural_control/storage/figures/",
         "dpi": 200
     },
     "error_xy_test1": {
