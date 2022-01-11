@@ -158,9 +158,9 @@ class TwoWayCouplingEnv(Env):
             obs[np.isnan(obs)] = 0
             done = True
 
-        #if np.sum(self.sim.obstacle.velocity.numpy() ** 2) > self.ref_vars['max_vel'] ** 2:
-        #    print('Hit maximum velocity, ending trajectory')
-        #    done = True
+        if np.sum(self.sim.obstacle.velocity.numpy() ** 2) > self.ref_vars['max_vel'] ** 2:
+            print('Hit maximum velocity, ending trajectory')
+            done = True
 
         if not self.translation_only and np.abs(self.sim.obstacle.angular_velocity.numpy()) > self.ref_vars['max_ang_vel']:
             print('Hit maximum angular velocity, ending trajectory')
@@ -248,7 +248,7 @@ class TwoWayCouplingEnv(Env):
         vel_rew = -10 * np.sum(self.sim.obstacle.velocity.numpy() ** 2) / self.ref_vars['max_vel'] ** 2
         ang_vel_rew = -10 * (self.sim.obstacle.angular_velocity.numpy() / self.ref_vars['max_ang_vel']) ** 2
 
-        rew = np.array(pos_rew) - baseline + ang_vel_rew
+        rew = np.array(pos_rew) - baseline# + ang_vel_rew
         if baseline != 0:
             rew = rew / np.abs(baseline)
 
@@ -338,7 +338,7 @@ class TwoWayCouplingConfigEnv(TwoWayCouplingEnv):
             torque=obs_inertia * max_ang_acc,
             time=obs_width / inflow_velocity,
             destination_zone_size=domain_size - destination_margins * 2,
-            max_vel=max_vel,
+            max_vel=1 / (dt * 0.9),
             max_ang_vel=max_ang_vel,
         )
 
@@ -381,7 +381,7 @@ def get_env(skip: int=8, stack: int=4) -> Env:
     env = BrenerStacker(env, 4, 4, 2, True)
     #env = SkipStackWrapper(env, skip=skip, stack=stack)
     #env = RewNormWrapper(env, None)
-    env = SeedOnResetWrapper(env)
+    env = SeedOnResetWrapper(env, 8000)
     #env = Monitor(env, info_keywords=('rew_unnormalized',))
     
     print('Observation space shape: %s' % str(env.observation_space.shape))
@@ -417,4 +417,4 @@ def train_model(name: str, log_dir: str, n_timesteps: int, **agent_kwargs) -> SA
 
 if __name__ == '__main__':
     #train_model('128_128_128_3e-4_2grst_bs128_angvelpen_rewnorm_test', 'hparams_tuning', 20000, batch_size=128, learning_starts=32, learning_rate=3e-4, gradient_steps=2, policy_kwargs=dict(net_arch=[128, 128, 128]))
-    train_model('episodes_300st', 'simple_env', 300000, batch_size=128, learning_starts=32, policy_kwargs=dict(net_arch=[38, 38]))
+    train_model('brener_setup_more_power_long_eps_3', 'simple_env', 300000, batch_size=256, learning_starts=128, policy_kwargs=dict(net_arch=[38, 38]))
