@@ -9,7 +9,7 @@
     },
     "error_xy_test1": {
         "runs": {
-            "RL": "/home/felix/Documents/GuidedResearch/BrenerSetupMorePowerLongEps/"
+            "RL": "/home/felix/Documents/GuidedResearch/BrenerSetupMorePowerLongEps2/"
         },
         "test": "test1",
         "all_models": false,
