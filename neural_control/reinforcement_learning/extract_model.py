@@ -1,3 +1,4 @@
+from typing import Optional
 import torch
 
 
@@ -12,8 +13,9 @@ class SACActorModule(torch.nn.Module):
         self.register_buffer('action_space_high', torch.tensor(high))
         self.obs_shape = obs_shape
 
-    def forward(self, obs: torch.Tensor) -> torch.Tensor:
-        return self.rescale(self.mu(self.latent_pi(self.features_extractor(obs))))
+    def forward(self, x_present: torch.Tensor, x_past: Optional[torch.Tensor]=None) -> torch.Tensor:
+        x = torch.cat((x_past, x_present), dim=1).to(x_present.device) if x_past is not None else x_present
+        return self.rescale(self.mu(self.latent_pi(self.features_extractor(x))))
 
     def rescale(self, x: torch.Tensor) -> torch.Tensor:
         return self.action_space_low + (0.5 * (torch.tanh(x) + 1.0) * (self.action_space_high - self.action_space_low))
@@ -38,7 +40,7 @@ def load_sac_torch_module(path: str) -> SACActorModule:
 
 
 if __name__ == '__main__':
-    store_sac_actor_as_torch_module('neural_control/storage/networks/episodes_300st', '../../../../Documents/GuidedResearch/300st/trained_model_0000.pth')
+    store_sac_actor_as_torch_module('neural_control/storage/networks/brener_setup_more_power_long_eps', '../../../../Documents/GuidedResearch/BrenerSetupMorePowerLongEps/trained_model_0000.pth')
     exit()
     from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
 

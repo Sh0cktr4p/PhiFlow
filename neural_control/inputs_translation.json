@@ -3,34 +3,32 @@
     "architecture": "fc_only",
     "past_window": 2,
     "resume_training": false,
-    "export_stride": 8,
+    "export_stride": 50,
+    "learning_rate_decay_half_life": 100,
     "max_acc": 1.0,
-    "max_vel": 3.0,
     "max_ang_acc": 0.025,
-    "max_ang_vel": 0.75,
     "device": "GPU",
     "probes_n_rows": 2,
     "probes_n_columns": 3,
     "probes_offset": 4,
     "probes_size": 4,
-    "bypass_tanh": false,
     "nn_vars": [
         "obs_vx",
         "obs_vy",
         "error_x",
-        "error_y"
+        "error_y",
+        "control_force_x",
+        "control_force_y"
     ],
     "online": {
-        "simulation_path": "simple_simulation_2/", 
-        "export_path": "short_episodes_training/",
+        "simulation_path": "/home/brener/phiflow/storage/baseline_simple_noinflow2/",
         "destinations_zone_growrate": 0.33,
         "n_timesteps": 1000,
         "simulation_dropout": 1.0,
-        "lr_half_life": 1000,
-        "n_iterations": 5001,
+        "n_iterations": 1000,
         "learning_rate": 0.01,
         "n_before_backprop": 16,
-        "model_export_stride": 500,
+        "model_export_stride": 100,
         "optimizer": "AdamW",
         "destinations_margins": [
             20,
@@ -39,26 +37,23 @@
         "hyperparams": {
             "spatial": 15,
             "velocity": 5,
-            "force": 0.5,
-            "delta_force": 0.0,
-            "torque": 0.1,
+            "force": 0.1,
+            "delta_force": 0.1,
             "angle": 30,
-            "ang_velocity": 0.2,
+            "ang_vel": 0.2,
             "delta_torque": 0.025,
             "proximity": 0.1
         }
     },
     "supervised": {
+        "initial_conditions_path": "/home/brener/phiflow/storage/baseline_simple_noinflow2/",
+        "learning_rate": 0.004,
         "n_iterations": 150001,
-        "lr_half_life": 15000,
-        "initial_conditions_path": "/home/felix/Code/HiWi/Brener/PhiFlow/neural_control/storage/simulation_data/simple_simulation_2/",
-        "learning_rate": 0.01,
-        "dataset_path": "/home/ramos/phiflow/storage/dataset_simple_noinflow/",
-        "dataset_n_steps": 500,
-        "model_export_stride": 20000,
+        "dataset_path": "/home/brener/phiflow/storage/dataset_simple_noinflow/",
+        "dataset_n_steps": 1000,
+        "model_export_stride": 8000,
         "n_simulations": 100,
         "optimizer": "AdamW",
-        "local_coordinates": true,
         "destinations_margins": [
             20,
             20
@@ -75,13 +70,15 @@
         }
     },
     "simulation": {
-        "path": "/home/trost/guided_research/PhiFlow/neural_control/storage/simulation_data/simple_simulation_2/",
+        "path": "/home/brener/phiflow/storage/dummy/",
         "n_steps": 501,
         "re": 1000,
         "tripping_on": false,
         "obs_density": 0.15,
         "reference_velocity": 1,
         "inflow_on": false,
+        "two_obstacles": false,
+        "obs2_ang_vel": 0.0,
         "dt": 0.1,
         "obs_type": "disc",
         "obs_width": 5,
@@ -105,16 +102,13 @@
     },
     "controller": {
         "ls_coeffs": [
-            "/home/ramos/phiflow/neural_control/controller_design/ls_coeffs_box_xy.json",
-            "/home/ramos/phiflow/neural_control/controller_design/ls_coeffs_box_angle.json"
+            "/home/brener/phiflow/neural_control/controller_design/ls_coeffs_simple.json"
         ],
         "pid_coeffs": [
-            "/home/ramos/phiflow/neural_control/controller_design/gains_pid_box_xy.json",
-            "/home/ramos/phiflow/neural_control/controller_design/gains_pid_box_angle.json"
+            "/home/brener/phiflow/neural_control/controller_design/gains_pid_simple.json"
         ],
         "clamp_values": [
-            20,
-            0.5
+            20
         ]
     },
     "export_vars": [
@@ -134,12 +128,15 @@
         "probes_points",
         "reference_x",
         "reference_y",
+        "loss",
+        "loss_velocity",
+        "loss_spatial",
         "error_x",
         "error_y",
-        "error_ang",
+        "loss_ang",
+        "loss_ang_vel",
         "fluid_torque",
         "vorticity",
-        "cfl",
-        "reward"
+        "cfl"
     ]
 }

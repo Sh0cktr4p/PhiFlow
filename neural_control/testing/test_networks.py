@@ -28,6 +28,7 @@ if __name__ == "__main__":
     elif "supervised" in inp.__dict__.keys(): model_type = "supervised"
     elif "rl" in inp.__dict__.keys(): model_type = "rl"
     else: raise ValueError("Unknown model type")
+    print(f"Using {model_type} model type")
     # Set device
     if inp.device == "GPU":
         TORCH_BACKEND.set_default_device("GPU")
@@ -75,8 +76,9 @@ if __name__ == "__main__":
         # ----------------------------------------------
         # ------------------- Setup NN -----------------
         # ----------------------------------------------
-        sampling_stride = inp.training_dt / inp.simulation["dt"]  # In case model has a different sampling than simulation step
-        assert sampling_stride.is_integer()
+        #sampling_stride = inp.training_dt / inp.simulation["dt"]  # In case model has a different sampling than simulation step
+        sampling_stride = 1 # TODO
+        #assert sampling_stride.is_integer() # TODO
         # Load model
         if model_type == "rl":
             model = load_sac_torch_module(model_path).to(device)
@@ -94,8 +96,8 @@ if __name__ == "__main__":
         # dataset.set_past_window_size(inp.past_window)
         # dataset.set_mode("validation")
         # Initialize inputs manager for reinforcement learning model
-        if model_type == "rl":
-            rl_inp = RLInputsManager(inp.past_window, inp.n_past_features, inp.rl['n_snapshots_per_window'], device)
+        #if model_type == "rl":
+        #    rl_inp = RLInputsManager(inp.past_window, inp.n_past_features, inp.rl['n_snapshots_per_window'], device)
         # Save a copy of the model that will be used for tests
         torch.save(model, os.path.abspath(f"{export_path}{model_path.split('/')[-1]}"))
         # ----------------------------------------------
@@ -103,7 +105,7 @@ if __name__ == "__main__":
         # ----------------------------------------------
         last_time = 0
         with torch.no_grad():
-            is_first_export = True  # Used for deleting previous files on folder
+            is_first_export = True  # TODO Used for deleting previous files on folder
             for test_i, test_attrs in enumerate(value for key, value in test.items() if 'case' in key):
                 export_stride = test_attrs["export_stride"] if test_attrs.get("export_stride") else inp.export_stride
                 # Initialize tensors
@@ -146,11 +148,14 @@ if __name__ == "__main__":
                     if i % sampling_stride == 0:
                         nn_inputs_present, loss_inputs = extract_inputs(inp.nn_vars, sim, probes, x_objective, ang_objective, ref_vars, inp.translation_only)
                         if model_type == "rl":
-                            rl_inp.add_snapshot(nn_inputs_present.view(1, -1))
+                            #rl_inp.add_snapshot(nn_inputs_present.view(1, -1))
                             # if i % inp.rl['n_snapshots_per_window'] == 0:
-                            control_effort = model(rl_inp.values.view(1, -1))
+                            #control_effort = model(rl_inp.values.view(1, -1))
+                            model_input = torch.cat((nn_inputs_past.view(1, -1), nn_inputs_present.view(1, -1)), dim=1).to(nn_inputs_present.device)
+                            control_effort = model(model_input)
                         else:
                             control_effort = model(nn_inputs_present.view(1, -1), nn_inputs_past.view(1, -1) if inp.past_window else None)
+                            #control_effort = model(nn_inputs_present.view(1, -1), nn_inputs_past.view(1, -1) if inp.past_window else None, inp.bypass_tanh)
                             # control_effort = torch.clamp(control_effort, -2., 2.)
                         control_force = control_effort[0, :2]
                         control_force_global = control_force
@@ -192,7 +197,7 @@ if __name__ == "__main__":
                     sim.error_y = loss_inputs['error_y'].detach() * ref_vars['length']
                     if not inp.translation_only:
                         sim.error_x, sim.error_y = rotate(torch.tensor([sim.error_x, sim.error_y]), angle_tensor)
-                        sim.reference_angle = ang_objective.detach()
+                        sim.reference_ang = ang_objective.detach()
                         sim.error_ang = loss_inputs['error_ang'].detach() * ref_vars['angle']
                         # sim.control_force_x2, sim.control_force_y2 = control_force_global2.detach() * ref_vars['force']  # TODO
                         sim.control_torque = control_torque.detach() * ref_vars['torque']

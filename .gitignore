@@ -30,3 +30,5 @@ neural_control/visualization/log.json
 *html
 *pdf
 *out
+*png
+figs/

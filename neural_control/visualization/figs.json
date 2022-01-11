@@ -1,0 +1,694 @@
+{
+    "global": {
+        "width": 5,
+        "height": 5,
+        "export_path": "/home/ramos/phiflow/figs/",
+        "dpi": 200
+    },
+    "error_xy_test1": {
+        "runs": {
+            "PID": "/home/ramos/phiflow/storage/simple/pid/",
+            "LS": "/home/ramos/phiflow/storage/simple/loop_shaped/",
+            "Supervised": "/home/ramos/phiflow/storage/simple/supervised/",
+            "Online 11": "/home/ramos/phiflow/storage/simple/online_11/"
+        },
+        "test": "test1",
+        "all_models": true,
+        "stdd": {
+            "alpha": 0.2,
+            "facecolor": "none"
+        },
+        "metrics": [
+            {
+                "name": "general_error_xy",
+                "plot_type": "plot",
+                "args": {
+                    "create_legend": true,
+                    "ylog": true,
+                    "create_grid": true,
+                    "kwargs": {
+                        "alpha": 0.8
+                    }
+                }
+            }
+        ]
+    },
+    "error_xy_test2": {
+        "runs": {
+            "PID": "/home/ramos/phiflow/storage/simple/pid/",
+            "LS": "/home/ramos/phiflow/storage/simple/loop_shaped/",
+            "Supervised": "/home/ramos/phiflow/storage/simple/supervised/",
+            "Online 11": "/home/ramos/phiflow/storage/simple/online_11/"
+        },
+        "test": "test2",
+        "all_models": true,
+        "stdd": {
+            "alpha": 0.2,
+            "facecolor": "none"
+        },
+        "metrics": [
+            {
+                "name": "general_error_xy",
+                "plot_type": "plot",
+                "args": {
+                    "create_legend": true,
+                    "create_grid": true,
+                    "kwargs": {
+                        "alpha": 0.8
+                    }
+                }
+            }
+        ]
+    },
+    "forces_test1": {
+        "runs": {
+            "PID": "/home/ramos/phiflow/storage/simple/pid/",
+            "LS": "/home/ramos/phiflow/storage/simple/loop_shaped/",
+            "Supervised": "/home/ramos/phiflow/storage/simple/supervised/",
+            "Online 11": "/home/ramos/phiflow/storage/simple/online_11/"
+        },
+        "test": "test1",
+        "stdd": {
+            "alpha": 0.2,
+            "facecolor": "none"
+        },
+        "metrics": [
+            {
+                "name": "force",
+                "plot_type": "plot",
+                "args": {
+                    "create_legend": true,
+                    "ylog": false,
+                    "x_limits": [
+                        0,
+                        100
+                    ],
+                    "create_grid": true,
+                    "kwargs": {
+                        "alpha": 0.8
+                    }
+                }
+            }
+        ]
+    },
+    "forces_test2": {
+        "runs": {
+            "PID": "/home/ramos/phiflow/storage/simple/pid/",
+            "LS": "/home/ramos/phiflow/storage/simple/loop_shaped/",
+            "Supervised": "/home/ramos/phiflow/storage/simple/supervised/",
+            "Online 11": "/home/ramos/phiflow/storage/simple/online_11/"
+        },
+        "test": "test2",
+        "stdd": {
+            "alpha": 0.2,
+            "facecolor": "none"
+        },
+        "metrics": [
+            {
+                "name": "force",
+                "plot_type": "plot",
+                "args": {
+                    "create_legend": true,
+                    "ylog": false,
+                    "create_grid": true,
+                    "kwargs": {
+                        "alpha": 0.8
+                    }
+                }
+            }
+        ]
+    },
+    "trajectories_test2": {
+        "runs": {
+            "PID": "/home/ramos/phiflow/storage/simple/pid/",
+            "LS": "/home/ramos/phiflow/storage/simple/loop_shaped/",
+            "Supervised": "/home/ramos/phiflow/storage/simple/supervised/",
+            "Online 11": "/home/ramos/phiflow/storage/simple/online_11/",
+            "RL": "/home/ramos/phiflow/storage/simple/rl/"
+        },
+        "test": "test2",
+        "all_models": true,
+        "stdd": {
+            "alpha": 0.2,
+            "facecolor": "none"
+        },
+        "metrics": [
+            {
+                "name": "trajectory",
+                "plot_type": "plot",
+                "args": {
+                    "create_legend": true,
+                    "create_grid": true,
+                    "kwargs": {
+                        "alpha": 0.5
+                    }
+                }
+            },
+            {
+                "name": "objective_xy",
+                "plot_type": "plot",
+                "args": {
+                    "create_legend": false,
+                    "create_grid": true,
+                    "kwargs": {
+                        "alpha": 0.8,
+                        "color": "k",
+                        "linestyle": "None",
+                        "marker": "+"
+                    }
+                }
+            }
+        ]
+    },
+    "error_xy_test3": {
+        "runs": {
+            "PID": "/home/ramos/phiflow/storage/rotation/pid/",
+            "Supervised": "/home/ramos/phiflow/storage/rotation/supervised2/",
+            "Online 13": "/home/ramos/phiflow/storage/rotation/online_13/"
+        },
+        "test": "test3",
+        "all_models": true,
+        "stdd": {
+            "alpha": 0.2,
+            "facecolor": "none"
+        },
+        "metrics": [
+            {
+                "name": "general_error_xy",
+                "plot_type": "plot",
+                "args": {
+                    "create_legend": true,
+                    "ylog": true,
+                    "create_grid": true,
+                    "kwargs": {
+                        "alpha": 0.8
+                    }
+                }
+            }
+        ]
+    },
+    "forces_test3": {
+        "runs": {
+            "PID": "/home/ramos/phiflow/storage/rotation/pid/",
+            "Online 3": "/home/ramos/phiflow/storage/rotation/online_3/"
+        },
+        "test": "test3",
+        "all_models": true,
+        "metrics": [
+            {
+                "name": "force",
+                "plot_type": "plot",
+                "args": {
+                    "create_legend": true,
+                    "ylog": true,
+                    "create_grid": true,
+                    "kwargs": {
+                        "alpha": 0.8
+                    }
+                }
+            }
+        ]
+    },
+    "forces_test4": {
+        "runs": {
+            "PID": "/home/ramos/phiflow/storage/rotation/pid/"
+        },
+        "test": "test4",
+        "all_models": true,
+        "metrics": [
+            {
+                "name": "force",
+                "plot_type": "plot",
+                "args": {
+                    "create_legend": true,
+                    "create_grid": true,
+                    "kwargs": {
+                        "alpha": 0.8
+                    }
+                }
+            }
+        ]
+    },
+    "angle_tracking_test6": {
+        "runs": {
+            "PID": "/home/ramos/phiflow/storage/rotation/pid/",
+            "Supervised": "/home/ramos/phiflow/storage/rotation/supervised2/",
+            "Online 13": "/home/ramos/phiflow/storage/rotation/online_13/"
+        },
+        "test": "test6",
+        "all_models": true,
+        "metrics": [
+            {
+                "name": "angle",
+                "plot_type": "plot",
+                "args": {
+                    "create_legend": true,
+                    "create_grid": true,
+                    "kwargs": {
+                        "alpha": 0.7
+                    }
+                }
+            },
+            {
+                "name": "objective_angle",
+                "plot_type": "plot",
+                "args": {
+                    "create_legend": false,
+                    "create_grid": true,
+                    "kwargs": {
+                        "alpha": 1,
+                        "color": "k",
+                        "linestyle": "--",
+                        "linewidth": 1,
+                        "dashes": [
+                            10,
+                            20
+                        ]
+                    }
+                }
+            }
+        ]
+    },
+    "angle_tracking_test4": {
+        "runs": {
+            "PID": "/home/ramos/phiflow/storage/rotation/pid/",
+            "Supervised": "/home/ramos/phiflow/storage/rotation/supervised2/",
+            "Online 13": "/home/ramos/phiflow/storage/rotation/online_13/"
+        },
+        "test": "test4",
+        "all_models": true,
+        "metrics": [
+            {
+                "name": "angle",
+                "plot_type": "plot",
+                "args": {
+                    "create_legend": true,
+                    "create_grid": true,
+                    "kwargs": {
+                        "alpha": 0.7
+                    }
+                }
+            },
+            {
+                "name": "objective_angle",
+                "plot_type": "plot",
+                "args": {
+                    "create_legend": false,
+                    "create_grid": true,
+                    "kwargs": {
+                        "alpha": 1,
+                        "color": "k",
+                        "linestyle": "--",
+                        "linewidth": 1,
+                        "dashes": [
+                            10,
+                            20
+                        ]
+                    }
+                }
+            }
+        ]
+    },
+    "angle_tracking_test5": {
+        "runs": {
+            "PID": "/home/ramos/phiflow/storage/rotation/pid/",
+            "Supervised": "/home/ramos/phiflow/storage/rotation/supervised2/",
+            "Online 13": "/home/ramos/phiflow/storage/rotation/online_13/"
+        },
+        "test": "test5",
+        "all_models": true,
+        "metrics": [
+            {
+                "name": "angle",
+                "plot_type": "plot",
+                "args": {
+                    "create_legend": true,
+                    "create_grid": true,
+                    "kwargs": {
+                        "alpha": 0.7
+                    }
+                }
+            },
+            {
+                "name": "objective_angle",
+                "plot_type": "plot",
+                "args": {
+                    "create_legend": false,
+                    "create_grid": true,
+                    "kwargs": {
+                        "alpha": 1,
+                        "color": "k",
+                        "linestyle": "--",
+                        "linewidth": 1,
+                        "dashes": [
+                            10,
+                            20
+                        ]
+                    }
+                }
+            }
+        ]
+    },
+    "xy_tracking_test4": {
+        "runs": {
+            "PID": "/home/ramos/phiflow/storage/rotation/pid/",
+            "Supervised": "/home/ramos/phiflow/storage/rotation/supervised2/",
+            "Online 13": "/home/ramos/phiflow/storage/rotation/online_13/"
+        },
+        "test": "test4",
+        "all_models": true,
+        "metrics": [
+            {
+                "name": "x",
+                "plot_type": "plot",
+                "args": {
+                    "create_legend": true,
+                    "create_grid": true,
+                    "y_limits": [
+                        35,
+                        145
+                    ],
+                    "kwargs": {
+                        "alpha": 0.7,
+                        "linestyle": "-."
+                    }
+                }
+            },
+            {
+                "name": "objective_x",
+                "plot_type": "plot",
+                "args": {
+                    "create_legend": false,
+                    "create_grid": true,
+                    "kwargs": {
+                        "alpha": 1,
+                        "color": "k",
+                        "linestyle": "--",
+                        "linewidth": 1,
+                        "dashes": [
+                            10,
+                            20
+                        ]
+                    }
+                }
+            },
+            {
+                "name": "y",
+                "plot_type": "plot",
+                "args": {
+                    "create_legend": true,
+                    "create_grid": true,
+                    "kwargs": {
+                        "alpha": 0.7
+                    }
+                }
+            },
+            {
+                "name": "objective_y",
+                "plot_type": "plot",
+                "args": {
+                    "create_legend": false,
+                    "create_grid": true,
+                    "kwargs": {
+                        "alpha": 1,
+                        "color": "k",
+                        "linestyle": "--",
+                        "linewidth": 1,
+                        "dashes": [
+                            10,
+                            20
+                        ]
+                    }
+                }
+            }
+        ]
+    },
+    "xy_tracking_test5": {
+        "runs": {
+            "PID": "/home/ramos/phiflow/storage/rotation/pid/",
+            "Supervised": "/home/ramos/phiflow/storage/rotation/supervised2/",
+            "Online 13": "/home/ramos/phiflow/storage/rotation/online_13/"
+        },
+        "test": "test5",
+        "all_models": true,
+        "metrics": [
+            {
+                "name": "x",
+                "plot_type": "plot",
+                "args": {
+                    "create_legend": true,
+                    "create_grid": true,
+                    "y_limits": [
+                        35,
+                        145
+                    ],
+                    "kwargs": {
+                        "alpha": 0.7,
+                        "linestyle": "-."
+                    }
+                }
+            },
+            {
+                "name": "objective_x",
+                "plot_type": "plot",
+                "args": {
+                    "create_legend": false,
+                    "create_grid": true,
+                    "kwargs": {
+                        "alpha": 1,
+                        "color": "k",
+                        "linestyle": "--",
+                        "linewidth": 1,
+                        "dashes": [
+                            10,
+                            20
+                        ]
+                    }
+                }
+            },
+            {
+                "name": "y",
+                "plot_type": "plot",
+                "args": {
+                    "create_legend": true,
+                    "create_grid": true,
+                    "kwargs": {
+                        "alpha": 0.7
+                    }
+                }
+            },
+            {
+                "name": "objective_y",
+                "plot_type": "plot",
+                "args": {
+                    "create_legend": false,
+                    "create_grid": true,
+                    "kwargs": {
+                        "alpha": 1,
+                        "color": "k",
+                        "linestyle": "--",
+                        "linewidth": 1,
+                        "dashes": [
+                            10,
+                            20
+                        ]
+                    }
+                }
+            }
+        ]
+    },
+    "xy_tracking_test6": {
+        "runs": {
+            "PID": "/home/ramos/phiflow/storage/rotation/pid/",
+            "Supervised": "/home/ramos/phiflow/storage/rotation/supervised2/",
+            "Online 13": "/home/ramos/phiflow/storage/rotation/online_13/"
+        },
+        "test": "test6",
+        "all_models": true,
+        "metrics": [
+            {
+                "name": "x",
+                "plot_type": "plot",
+                "args": {
+                    "create_legend": true,
+                    "create_grid": true,
+                    "y_limits": [
+                        35,
+                        145
+                    ],
+                    "kwargs": {
+                        "alpha": 0.7,
+                        "linestyle": "-."
+                    }
+                }
+            },
+            {
+                "name": "objective_x",
+                "plot_type": "plot",
+                "args": {
+                    "create_legend": false,
+                    "create_grid": true,
+                    "kwargs": {
+                        "alpha": 1,
+                        "color": "k",
+                        "linestyle": "--",
+                        "linewidth": 1,
+                        "dashes": [
+                            10,
+                            20
+                        ]
+                    }
+                }
+            },
+            {
+                "name": "y",
+                "plot_type": "plot",
+                "args": {
+                    "create_legend": true,
+                    "create_grid": true,
+                    "kwargs": {
+                        "alpha": 0.7
+                    }
+                }
+            },
+            {
+                "name": "objective_y",
+                "plot_type": "plot",
+                "args": {
+                    "create_legend": false,
+                    "create_grid": true,
+                    "kwargs": {
+                        "alpha": 1,
+                        "color": "k",
+                        "linestyle": "--",
+                        "linewidth": 1,
+                        "dashes": [
+                            10,
+                            20
+                        ]
+                    }
+                }
+            }
+        ]
+    },
+    "trajectories_test4": {
+        "runs": {
+            "PID": "/home/ramos/phiflow/storage/rotation/pid/",
+            "Supervised": "/home/ramos/phiflow/storage/rotation/supervised2/",
+            "Online 13": "/home/ramos/phiflow/storage/rotation/online_13/"
+        },
+        "test": "test4",
+        "all_models": true,
+        "stdd": {
+            "alpha": 0.2,
+            "facecolor": "none"
+        },
+        "metrics": [
+            {
+                "name": "trajectory",
+                "plot_type": "plot",
+                "args": {
+                    "create_legend": true,
+                    "create_grid": true,
+                    "kwargs": {
+                        "alpha": 0.5
+                    }
+                }
+            },
+            {
+                "name": "objective_xy_points",
+                "plot_type": "plot",
+                "args": {
+                    "create_legend": false,
+                    "create_grid": true,
+                    "kwargs": {
+                        "alpha": 0.8,
+                        "color": "k",
+                        "linestyle": "None",
+                        "marker": "+"
+                    }
+                }
+            }
+        ]
+    },
+    "trajectories_test5": {
+        "runs": {
+            "PID": "/home/ramos/phiflow/storage/rotation/pid/",
+            "Supervised": "/home/ramos/phiflow/storage/rotation/supervised2/",
+            "Online 13": "/home/ramos/phiflow/storage/rotation/online_13/"
+        },
+        "test": "test5",
+        "all_models": true,
+        "stdd": {
+            "alpha": 0.2,
+            "facecolor": "none"
+        },
+        "metrics": [
+            {
+                "name": "trajectory",
+                "plot_type": "plot",
+                "args": {
+                    "create_legend": true,
+                    "create_grid": true,
+                    "kwargs": {
+                        "alpha": 0.5
+                    }
+                }
+            },
+            {
+                "name": "objective_xy_points",
+                "plot_type": "plot",
+                "args": {
+                    "create_legend": false,
+                    "create_grid": true,
+                    "kwargs": {
+                        "alpha": 0.8,
+                        "color": "k",
+                        "linestyle": "None",
+                        "marker": "+"
+                    }
+                }
+            }
+        ]
+    },
+    "trajectories_test6": {
+        "runs": {
+            "PID": "/home/ramos/phiflow/storage/rotation/pid/",
+            "Supervised": "/home/ramos/phiflow/storage/rotation/supervised2/",
+            "Online 13": "/home/ramos/phiflow/storage/rotation/online_13/"
+        },
+        "test": "test6",
+        "all_models": true,
+        "stdd": {
+            "alpha": 0.2,
+            "facecolor": "none"
+        },
+        "metrics": [
+            {
+                "name": "trajectory",
+                "plot_type": "plot",
+                "args": {
+                    "create_legend": true,
+                    "create_grid": true,
+                    "kwargs": {
+                        "alpha": 0.5
+                    }
+                }
+            },
+            {
+                "name": "objective_xy_points",
+                "plot_type": "plot",
+                "args": {
+                    "create_legend": false,
+                    "create_grid": true,
+                    "kwargs": {
+                        "alpha": 0.8,
+                        "color": "k",
+                        "linestyle": "None",
+                        "marker": "+"
+                    }
+                }
+            }
+        ]
+    }
+}

@@ -1,9 +1,9 @@
 {
     "dataPath": "/home/felix/Documents/GuidedResearch/",
-    "sModel": "300st",
+    "sModel": "BrenerSetupMorePower",
     "sVar": [
         "obs_mask",
-        "pressure",
+        "vx",
         "obs_xy",
         "fluid_force_x",
         "fluid_force_y",
@@ -56,7 +56,7 @@
         "0",
         "0",
         "5",
-        "4",
+        "5",
         "5",
         "1",
         "2",
@@ -105,8 +105,8 @@
         "",
         "",
         "",
-        "",
-        "",
+        " ",
+        " ",
         " ",
         " ",
         " ",
@@ -130,8 +130,8 @@
         " "
     ],
     "iUpdatePlot": [
-        1,
-        1,
+        0,
+        0,
         1,
         1,
         1,
@@ -160,5 +160,7 @@
         0,
         1,
         0
-    ]
+    ],
+    "iUseTestData": 1,
+    "sTest": "test1_0"
 }
