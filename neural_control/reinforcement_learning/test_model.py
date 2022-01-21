@@ -1,6 +1,6 @@
 from gym import Env
 from reinforcement_learning.envs.seed_on_reset_wrapper import SeedOnResetWrapper
-from reinforcement_learning.envs.skip_stack_wrapper import SkipStackWrapper
+from reinforcement_learning.envs.skip_stack_wrapper import SkipStackWrapper, BrenerStacker
 from reinforcement_learning.envs.seed_on_reset_wrapper import SeedOnResetWrapper
 from reinforcement_learning.envs.two_way_coupling_env import TwoWayCouplingConfigEnv
 from stable_baselines3.sac import SAC
@@ -31,13 +31,13 @@ def evaluate_model(model: SAC, env: Env):
 
 if __name__ == '__main__':
     config_path = os.path.join(os.path.dirname(__file__), os.pardir, 'inputs.json')
-    model_path = os.path.join(os.path.dirname(__file__), os.pardir, 'storage', 'networks', 'short_episodes')
+    model_path = os.path.join(os.path.dirname(__file__), os.pardir, 'storage', 'networks', 'brener_setup_more_power_long_eps_3')
 
     print(f"loading model from {model_path}")
 
     env = TwoWayCouplingConfigEnv(config_path)
-    #env = SkipStackWrapper(env, skip=8, stack=4)
-    env = SeedOnResetWrapper(env, 1000)
+    env = BrenerStacker(env, 4, 4, 2, True)
+    env = SeedOnResetWrapper(env)
     model = SAC.load(model_path)
 
     evaluate_model(model, env)

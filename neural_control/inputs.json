@@ -22,7 +22,7 @@
     ],
     "online": {
         "simulation_path": "simple_simulation_2/", 
-        "export_path": "short_episodes_training/",
+        "export_path": "brener_setup_more_power_long_eps_3/",
         "destinations_zone_growrate": 0.33,
         "n_timesteps": 1000,
         "simulation_dropout": 1.0,
