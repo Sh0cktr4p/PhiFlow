@@ -4,11 +4,17 @@ import numpy as np
 import shutil
 from misc.TwoWayCouplingSimulation import TwoWayCouplingSimulation
 from misc_funcs import extract_inputs, Probes, prepare_export_folder, rotate
+from reinforcement_learning.envs.numpy_wrapper import NumpyWrapper
+from reinforcement_learning.envs.seed_on_reset_wrapper import SeedOnResetWrapper
+from reinforcement_learning.envs.skip_stack_wrapper import BrenerStacker
 from gym import Env
 from gym.spaces import Box
 from phi import math
 import os
 from InputsManager import InputsManager
+from stable_baselines3.sac import SAC
+from stable_baselines3.common.callbacks import CallbackList
+from reinforcement_learning.callbacks import EveryNRolloutsPlusStartFinishFunctionCallback
 
 
 class TwoWayCouplingTorchEnv(Env):
@@ -124,18 +130,22 @@ class TwoWayCouplingTorchEnv(Env):
 
         self.sim.apply_forces(self.forces * self.ref_vars['force'], self.torque * self.ref_vars['torque'])
         self.sim.advect()
-        converged = self.sim.make_incompressible()
+        self.sim.make_incompressible()
         self.probes.update_transform(self.sim.obstacle.geometry.center.native(), -1 * self._obstacle_angle)
         self.sim.calculate_fluid_forces()
         obs, loss = self._extract_inputs()
-        done = self._obstacle_leaving_domain() or self.step_idx == self.n_steps or not converged
+        done = self._obstacle_leaving_domain() or self.step_idx == self.n_steps
 
         if torch.isnan(torch.sum(obs)):
             print('NaN value in observation!')
             obs[torch.isnan(obs)] = 0
             done = True
 
-        if not self.translation_only and torch.abs(self.sim.obstacle.angular_velocity.numpy()) > self.ref_vars['max_ang_vel']:
+        if torch.sum(self.sim.obstacle.velocity.native() ** 2) > self.ref_vars['max_vel'] ** 2:
+            print('Hit maximum velocity, ending trajectory')
+            done = True
+
+        if not self.translation_only and torch.abs(self.sim.obstacle.angular_velocity.native()) > self.ref_vars['max_ang_vel']:
             print('Hit maximum angular velocity, ending trajectory')
             done = True
 
@@ -165,8 +175,6 @@ class TwoWayCouplingTorchEnv(Env):
         if not self.translation_only:
             self.sim.error_ang = self.ang_error
         self.sim.reward = self.rew
-
-        #print("Episode %i step %i (%i)" % (self.epis_idx, self.step_idx // self.export_stride, self.step_idx))
         
         self.sim.export_data(
             self.sim_export_path, 
@@ -288,7 +296,7 @@ class TwoWayCouplingConfigTorchEnv(TwoWayCouplingTorchEnv):
             torque=obs_inertia * max_ang_acc,
             time=obs_width / inflow_velocity,
             destination_zone_size=domain_size - destination_margins * 2,
-            max_vel=max_vel,
+            max_vel=1 / (dt * 0.9),
             max_ang_vel=max_ang_vel,
         )
 
@@ -324,49 +332,48 @@ class TwoWayCouplingConfigTorchEnv(TwoWayCouplingTorchEnv):
             ref_vars=ref_vars,
         )
 
-if __name__ == '__main__':
-    env = TwoWayCouplingConfigTorchEnv('neural_control/inputs.json')
 
-    obs0 = env.reset()
-    print(obs0)
-    act1 = torch.tensor([1, 1], dtype=torch.float32, requires_grad=True)
-    obs1, rew1, done, _ = env.step(act1)
-    print(obs1)
-    print(rew1)
-    act2 = torch.tensor([1, 1], dtype=torch.float32, requires_grad=True)
-    obs2, rew2, done, _ = env.step(act2)
-    print(obs2)
-    print(rew2)
-
-    rew2.backward()
-    print("gradient: " + str(act1.grad))
-
-    '''
-    env = TorchTestEnv(1, 1000)
-
-    obss = []
-    rews = []
-    obss.append(env.reset())
-
-    done = False
-
-    acts = [torch.tensor(i, dtype=torch.float32, requires_grad=True) for i in [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 200, 300]]
-
-    i = 0
-
-    while not done:
-        #custom_input = int(input())
-        list_input = acts[i]
-        obs, rew, done, _ = env.step(list_input)
-        env.render()
-        obss.append(obs)
-        rews.append(rew)
-        i += 1
+def get_env(skip: int=8, stack: int=4) -> Env:
+    inputs_path = os.path.join(os.path.dirname(__file__), os.pardir, os.pardir, 'inputs.json')
     
-    print(obss)
-    print(rews)
+    env = TwoWayCouplingConfigTorchEnv(inputs_path)
+    env = NumpyWrapper(env)
+    env = BrenerStacker(env, 4, 4, 2, True)
+    #env = SkipStackWrapper(env, skip=skip, stack=stack)
+    #env = RewNormWrapper(env, None)
+    env = SeedOnResetWrapper(env, 0)
+    #env = Monitor(env, info_keywords=('rew_unnormalized',))
+    
+    print('Observation space shape: %s' % str(env.observation_space.shape))
+    return env
+    
+def train_model(name: str, log_dir: str, n_timesteps: int, **agent_kwargs) -> SAC:
+    storage_folder_path = os.path.join(os.path.dirname(__file__), os.pardir, os.pardir, 'storage')
 
-    print(acts[0].grad())
-    rews[-1].backward()
-    print(acts[0].grad())
-    '''
+    model_path = os.path.join(storage_folder_path, "networks", name)
+    tb_log_path = os.path.join(storage_folder_path, "tensorboard", log_dir)
+
+    env = get_env()
+
+    print(model_path)
+    if os.path.exists(model_path + '.zip'):
+        print('model path exists, loading model')
+        model = SAC.load(model_path, env)
+    else:
+        print('creating new model...')
+        model = SAC('MlpPolicy', env, tensorboard_log=tb_log_path, verbose=1, **agent_kwargs)
+
+    def store_fn(_):
+        print(f"Storing model to {model_path}...")
+        model.save(model_path)
+        print("Stored model.")
+
+    callback = CallbackList([
+        EveryNRolloutsPlusStartFinishFunctionCallback(20000, store_fn),
+    ])
+
+    model.learn(total_timesteps=n_timesteps, callback=callback, tb_log_name=name)
+
+if __name__ == '__main__':
+    #train_model('128_128_128_3e-4_2grst_bs128_angvelpen_rewnorm_test', 'hparams_tuning', 20000, batch_size=128, learning_starts=32, learning_rate=3e-4, gradient_steps=2, policy_kwargs=dict(net_arch=[128, 128, 128]))
+    train_model('brener_setup_speed_limit_long_eps', 'simple_env', 300000, batch_size=256, learning_starts=128, policy_kwargs=dict(net_arch=[38, 38]))

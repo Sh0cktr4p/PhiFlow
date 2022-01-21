@@ -1,6 +1,6 @@
 import shutil
 import time
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 import os
 #from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
 
@@ -20,7 +20,7 @@ from phi import math
 
 from InputsManager import InputsManager
 from misc.TwoWayCouplingSimulation import TwoWayCouplingSimulation
-from misc_funcs import extract_inputs, Probes, prepare_export_folder, rotate
+from misc_funcs import calculate_loss, extract_inputs, Probes, prepare_export_folder, rotate
 from reinforcement_learning.envs.rew_norm_wrapper import RewNormWrapper
 from reinforcement_learning.envs.skip_stack_wrapper import SkipStackWrapper, BrenerStacker
 from reinforcement_learning.envs.seed_on_reset_wrapper import SeedOnResetWrapper
@@ -67,6 +67,7 @@ class TwoWayCouplingEnv(Env):
         export_stride: int,
         input_vars: list,
         ref_vars: dict,
+        hyperparams: dict,
     ):
         self.sim = TwoWayCouplingSimulation(device, translation_only)
         print(f"Sim import path: {sim_import_path}")
@@ -87,6 +88,7 @@ class TwoWayCouplingEnv(Env):
         self.sponge_size = sponge_size
         self.input_vars = input_vars
         self.ref_vars = ref_vars
+        self.hyperparams = hyperparams
         self.inflow_on = inflow_on
         self.inflow_velocity = inflow_velocity
 
@@ -135,8 +137,9 @@ class TwoWayCouplingEnv(Env):
             inflow_on=self.inflow_on,
         )
         self.pos_objective, self.ang_objective = self._generate_objectives()
-        obs, loss = self._extract_inputs()
-        self.rew_baseline = self._get_rew(loss, 0, False)
+        obs, loss_inputs = self._extract_inputs()
+        self.pos_error = np.array([val.cpu().numpy() for val in [loss_inputs[key] for key in ['error_x', 'error_y']]])
+        #self.rew_baseline = self._get_rew(loss, False)
         print("pos objective: %s" % str(self.pos_objective))
         return obs
         
@@ -147,11 +150,11 @@ class TwoWayCouplingEnv(Env):
 
         self.sim.apply_forces(self.forces * self.ref_vars['force'], self.torque * self.ref_vars['torque'])
         self.sim.advect()
-        converged = self._make_incompressible()
+        self.sim.make_incompressible()
         self.probes.update_transform(self.sim.obstacle.geometry.center.numpy(), -1 * self._obstacle_angle.numpy())
         self.sim.calculate_fluid_forces()
-        obs, loss = self._extract_inputs()
-        done = self._obstacle_leaving_domain() or self.step_idx == self.n_steps or not converged
+        obs, loss_inputs = self._extract_inputs()
+        done = self._obstacle_leaving_domain() or self.step_idx == self.n_steps
 
         if np.isnan(np.sum(obs)):
             print('NaN value in observation!')
@@ -166,7 +169,13 @@ class TwoWayCouplingEnv(Env):
             print('Hit maximum angular velocity, ending trajectory')
             done = True
 
-        self.rew = self._get_rew(loss, self.rew_baseline, done)
+        # Short hack TODO
+        loss_inputs['control_force_x'] = self.forces[0:1]
+        loss_inputs['control_force_y'] = self.forces[1:2]
+        for dim in ['x', 'y']:
+            loss_inputs[f'd_control_force_{dim}'] = loss_inputs[f"control_force_{dim}"]
+
+        self.rew = self._get_rew(loss_inputs, done, self.rew_baseline)
         info = {}
 
         return obs, self.rew, done, info
@@ -193,8 +202,6 @@ class TwoWayCouplingEnv(Env):
             self.sim.error_ang = self.ang_error
         self.sim.reward = self.rew
 
-        #print("Episode %i step %i (%i)" % (self.epis_idx, self.step_idx // self.export_stride, self.step_idx))
-        
         self.sim.export_data(
             self.sim_export_path, 
             self.epis_idx, 
@@ -211,14 +218,9 @@ class TwoWayCouplingEnv(Env):
         torch.manual_seed(seed)
 
     def _generate_objectives(self) -> Tuple[torch.Tensor, torch.Tensor]:
-        preset_values = [
-            41.95254015709299,
-            48.60757465489678
-        ]
         pos_objective_min = torch.tensor(self.destination_margins)
         pos_objective_max = torch.tensor(self.domain_size) - torch.tensor(self.destination_margins)
         pos_objective = pos_objective_min + (torch.rand(2) * (pos_objective_max - pos_objective_min))
-        #pos_objective = torch.tensor(preset_values)
         ang_objective = torch.rand(1) * 2 * math.PI - math.PI
         return pos_objective.to(self.sim.device), ang_objective.to(self.sim.device)
 
@@ -240,37 +242,19 @@ class TwoWayCouplingEnv(Env):
     def _get_obs(self) -> np.ndarray:
         return self._extract_inputs()[0]
 
-    def _get_rew(self, loss_inputs: dict, baseline: np.ndarray, done: bool) -> np.ndarray:
-        self.pos_error = np.array([val.cpu().numpy() for val in [loss_inputs[key] for key in ['error_x', 'error_y']]])
+    def _get_rew(self, loss_inputs: dict, done: bool, baseline: Optional[np.ndarray]=None) -> np.ndarray:
+        new_pos_error = np.array([val.cpu().numpy() for val in [loss_inputs[key] for key in ['error_x', 'error_y']]])
+        pos_error_diff = np.sum((self.pos_error - new_pos_error)**2)
+        self.pos_error = new_pos_error
 
-        pos_rew = -1 * np.sum(self.pos_error ** 2)
+        vel_reward = -np.sum(self.sim.obstacle.velocity.numpy() ** 2) / self.ref_vars['max_vel'] ** 2
+        #loss, _ = calculate_loss(loss_inputs, self.hyperparams, self.translation_only)
+        #rew = -1 * loss
 
-        vel_rew = -10 * np.sum(self.sim.obstacle.velocity.numpy() ** 2) / self.ref_vars['max_vel'] ** 2
-        ang_vel_rew = -10 * (self.sim.obstacle.angular_velocity.numpy() / self.ref_vars['max_ang_vel']) ** 2
+        #if baseline:
+        #    rew = (rew - baseline) / np.abs(baseline)
 
-        rew = np.array(pos_rew) - baseline# + ang_vel_rew
-        if baseline != 0:
-            rew = rew / np.abs(baseline)
-
-        if np.sum(self.pos_error ** 2) < 0.15 ** 2:
-            rew += 9
-
-        rew = np.max([rew, -30])
-
-        if not self.translation_only:
-            self.ang_error = loss_inputs[4:5]
-            # TODO calculate angular reward and add to output
-
-        return rew
-
-    def _make_incompressible(self) -> bool:
-        self.sim.make_incompressible()
-        return True
-        #try:
-        #except AssertionError as e:
-        #    print('Assertion error in make_incompressible, probably non-converging pressure solver')
-        #    print(e)
-        #    return False
+        return pos_error_diff * self.hyperparams['spatial'] + vel_reward * self.hyperparams['velocity']
 
     def _obstacle_leaving_domain(self) -> bool:
         obstacle_center = self.sim.obstacle.geometry.center
@@ -310,6 +294,7 @@ class TwoWayCouplingConfigEnv(TwoWayCouplingEnv):
 
         n_steps = config.online['n_timesteps']
         destination_margins = config.online['destinations_margins']
+        hyperparams = config.online['hyperparams']
         sim_import_path = os.path.join(simulation_storage_path, config.online['simulation_path'])
         sim_export_path = os.path.join(simulation_storage_path, config.online['export_path'])
 
@@ -372,6 +357,7 @@ class TwoWayCouplingConfigEnv(TwoWayCouplingEnv):
             export_stride=export_stride,
             input_vars=input_vars,
             ref_vars=ref_vars,
+            hyperparams=hyperparams,
         )
 
 def get_env(skip: int=8, stack: int=4) -> Env:
@@ -381,7 +367,7 @@ def get_env(skip: int=8, stack: int=4) -> Env:
     env = BrenerStacker(env, 4, 4, 2, True)
     #env = SkipStackWrapper(env, skip=skip, stack=stack)
     #env = RewNormWrapper(env, None)
-    env = SeedOnResetWrapper(env, 8000)
+    env = SeedOnResetWrapper(env)
     #env = Monitor(env, info_keywords=('rew_unnormalized',))
     
     print('Observation space shape: %s' % str(env.observation_space.shape))
@@ -417,4 +403,4 @@ def train_model(name: str, log_dir: str, n_timesteps: int, **agent_kwargs) -> SA
 
 if __name__ == '__main__':
     #train_model('128_128_128_3e-4_2grst_bs128_angvelpen_rewnorm_test', 'hparams_tuning', 20000, batch_size=128, learning_starts=32, learning_rate=3e-4, gradient_steps=2, policy_kwargs=dict(net_arch=[128, 128, 128]))
-    train_model('brener_setup_more_power_long_eps_3', 'simple_env', 300000, batch_size=256, learning_starts=128, policy_kwargs=dict(net_arch=[38, 38]))
+    train_model('relative_pos_rew', 'simple_env', 300000, batch_size=256, learning_starts=128, policy_kwargs=dict(net_arch=[38, 38]))
