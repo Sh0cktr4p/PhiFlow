@@ -243,18 +243,19 @@ class TwoWayCouplingEnv(Env):
         return self._extract_inputs()[0]
 
     def _get_rew(self, loss_inputs: dict, done: bool, baseline: Optional[np.ndarray]=None) -> np.ndarray:
-        new_pos_error = np.array([val.cpu().numpy() for val in [loss_inputs[key] for key in ['error_x', 'error_y']]])
-        pos_error_diff = np.sum((self.pos_error - new_pos_error)**2)
-        self.pos_error = new_pos_error
+        loss, _ = calculate_loss(loss_inputs, self.hyperparams, self.translation_only)
+        rew = -1 * loss
+        return rew.cpu().numpy()
+        #new_pos_error = np.array([val.cpu().numpy() for val in [loss_inputs[key] for key in ['error_x', 'error_y']]])
+        #pos_error_diff = np.sum((self.pos_error - new_pos_error)**2)
+        #self.pos_error = new_pos_error
 
-        vel_reward = -np.sum(self.sim.obstacle.velocity.numpy() ** 2) / self.ref_vars['max_vel'] ** 2
-        #loss, _ = calculate_loss(loss_inputs, self.hyperparams, self.translation_only)
-        #rew = -1 * loss
+        #vel_reward = -np.sum(self.sim.obstacle.velocity.numpy() ** 2) / self.ref_vars['max_vel'] ** 2
 
         #if baseline:
         #    rew = (rew - baseline) / np.abs(baseline)
 
-        return pos_error_diff * self.hyperparams['spatial'] + vel_reward * self.hyperparams['velocity']
+        #return pos_error_diff * self.hyperparams['spatial'] + vel_reward * self.hyperparams['velocity']
 
     def _obstacle_leaving_domain(self) -> bool:
         obstacle_center = self.sim.obstacle.geometry.center
@@ -378,7 +379,6 @@ def train_model(name: str, log_dir: str, n_timesteps: int, **agent_kwargs) -> SA
 
     model_path = os.path.join(storage_folder_path, "networks", name)
     tb_log_path = os.path.join(storage_folder_path, "tensorboard", log_dir)
-
     env = get_env()
 
     print(model_path)
@@ -403,4 +403,4 @@ def train_model(name: str, log_dir: str, n_timesteps: int, **agent_kwargs) -> SA
 
 if __name__ == '__main__':
     #train_model('128_128_128_3e-4_2grst_bs128_angvelpen_rewnorm_test', 'hparams_tuning', 20000, batch_size=128, learning_starts=32, learning_rate=3e-4, gradient_steps=2, policy_kwargs=dict(net_arch=[128, 128, 128]))
-    train_model('relative_pos_rew', 'simple_env', 300000, batch_size=256, learning_starts=128, policy_kwargs=dict(net_arch=[38, 38]))
+    train_model('brener_rew', 'simple_env', 300000, batch_size=256, learning_starts=128, policy_kwargs=dict(net_arch=[38, 38]))

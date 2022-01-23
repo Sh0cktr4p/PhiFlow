@@ -166,7 +166,7 @@ def calculate_loss(loss_inputs: math.Tensor, hyperparams: dict, translation_only
     dforce_term = hyperparams['delta_force'] * torch.sum(delta_force**2)
     force_term = hyperparams['force'] * torch.sum(force**2)
     # Other terms are pronounced only when spatial or angular error are low
-    velocity_term = hyperparams['velocity'] * torch.sum(obs_velocity**2 / (torch.sum(error_xy**2, 2, keepdim=True)**2 * hyperparams['proximity'] + 1))
+    velocity_term = hyperparams['velocity'] * torch.sum(obs_velocity**2 / (torch.sum(error_xy**2, 0, keepdim=True)**2 * hyperparams['proximity'] + 1))
     if not translation_only:
         error_ang = loss_inputs['error_ang']
         angular_velocity = loss_inputs['obs_ang_vel']
