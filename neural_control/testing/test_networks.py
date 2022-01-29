@@ -157,8 +157,6 @@ if __name__ == "__main__":
                             inp.translation_only,
                             # clamp={'error_x': max_error_xy, 'error_y': max_error_xy}
                         )
-                        nn_inputs_present[..., 2:4] = torch.clamp(nn_inputs_present[..., 2:4], -20 / ref_vars['length'], 20 / ref_vars['length'])  # TODO
-                        nn_inputs_present[..., 5:6] = torch.clamp(nn_inputs_present[..., 5:6], -3.14 / ref_vars['length'], 3.14 / ref_vars['length'])  # TODO
                         if model_type == "rl":
                             #rl_inp.add_snapshot(nn_inputs_present.view(1, -1))
                             # if i % inp.rl['n_snapshots_per_window'] == 0:
@@ -166,9 +164,7 @@ if __name__ == "__main__":
                             model_input = torch.cat((nn_inputs_past.view(1, -1), nn_inputs_present.view(1, -1)), dim=1).to(nn_inputs_present.device)
                             control_effort = model(model_input)
                         else:
-                            control_effort = model(nn_inputs_present.view(1, -1), nn_inputs_past.view(1, -1) if inp.past_window else None)
-                            #control_effort = model(nn_inputs_present.view(1, -1), nn_inputs_past.view(1, -1) if inp.past_window else None, inp.bypass_tanh)
-                            # control_effort = torch.clamp(control_effort, -2., 2.)
+                            control_effort = model(nn_inputs_present.view(1, -1), nn_inputs_past.view(1, -1) if inp.past_window else None, inp.bypass_tanh)
                         # Warmup
                         if i < inp.past_window * sampling_stride: control_effort = torch.zeros_like(control_effort)
                         control_force = control_effort[0, :2]
