@@ -1,6 +1,6 @@
 {
-    "dataPath": "/home/felix/Code/HiWi/Brener/PhiFlow/neural_control/storage/simulation_data",
-    "sModel": "brener_setup_more_power_long_eps_3",
+    "dataPath": "/home/felix/Documents/GuidedResearch/",
+    "sModel": "working",
     "sVar": [
         "obs_mask",
         "vx",
@@ -152,7 +152,7 @@
         0,
         1,
         0,
-        1,
+        0,
         0,
         0,
         0,
@@ -161,6 +161,6 @@
         1,
         0
     ],
-    "iUseTestData": 0,
-    "sTest": ""
+    "iUseTestData": 1,
+    "sTest": "test1_0"
 }
