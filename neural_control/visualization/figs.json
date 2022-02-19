@@ -7,9 +7,11 @@
         "export_path": "/home/felix/Code/HiWi/Brener/PhiFlow/neural_control/storage/figures/",
         "dpi": 400
     },
-    "error_xy_test1": {
+    "error_xy_g_rew_love_rew": {
         "runs": {
-            "RL": "/home/felix/Documents/GuidedResearch/BrenerSetupMorePowerLongEps2/"
+            "G 1": "/home/felix/Documents/GuidedResearch/g_rew/",
+            "G 2": "/home/felix/Documents/GuidedResearch/G2/",
+            "LOVE": "/home/felix/Documents/GuidedResearch/LOVE/"
         },
         "test": "test1",
         "all_models": false,

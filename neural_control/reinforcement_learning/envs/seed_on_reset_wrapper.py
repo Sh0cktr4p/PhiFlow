@@ -1,6 +1,7 @@
 from gym import Env, Wrapper
 import numpy as np
 
+
 class SeedOnResetWrapper(Wrapper):
     def __init__(self, env: Env, base_seed: int=0):
         super().__init__(env)

@@ -2,7 +2,6 @@ from cProfile import label
 import json
 import collections
 import numpy as np
-from InputsManager import InputsManager
 import os
 from natsort import natsorted
 import argparse
@@ -10,7 +9,7 @@ import matplotlib.pyplot as plt
 # colors = cycle(plt.rcParams["axes.prop_cycle"].by_key()["color"])
 
 
-def calculate_variability(y: np.array, y_additional: np.array = 0, normalizing_factor: float = 1):
+def calculate_variability(y: np.ndarray, y_additional: np.ndarray = 0, normalizing_factor: float = 1):
     """
     Calculate how much y varies between consecutive points on average
 
@@ -24,7 +23,7 @@ def calculate_variability(y: np.array, y_additional: np.array = 0, normalizing_f
     return (np.mean(np.abs(values[1:] - values[:-1])),), ('',)
 
 
-def calculate_error(x: np.array, y: np.array = 0, normalizing_factor: float = 1):
+def calculate_error(x: np.ndarray, y: np.ndarray = 0, normalizing_factor: float = 1):
     """
     Calculate mena spatial error from x and y components and its standard deviation
 
@@ -38,13 +37,14 @@ def calculate_error(x: np.array, y: np.array = 0, normalizing_factor: float = 1)
         labels: labels of outputs
 
     """
+    print(type(x))
     error = np.sqrt(x**2 + y**2) / normalizing_factor
     sigma = np.std(error, axis=0)
     error = np.mean(error, axis=0)
     return (error, sigma), ('', '_stdd')
 
 
-def calculate_stopping_error(x: np.array, y: np.array = 0, normalizing_factor: float = 1):
+def calculate_stopping_error(x: np.ndarray, y: np.ndarray = 0, normalizing_factor: float = 1):
     """
     Mean error of the last 40% of the trajectory
 
@@ -67,7 +67,7 @@ def calculate_stopping_error(x: np.array, y: np.array = 0, normalizing_factor: f
     return (last_mean_error, last_sigma), ('', '_stdd')
 
 
-def calculate_mean(x: np.array, y: np.array = 0, normalizing_factor: float = 1):
+def calculate_mean(x: np.ndarray, y: np.ndarray = 0, normalizing_factor: float = 1):
     """
     Integrate coordinates x and y
 
@@ -87,7 +87,7 @@ def calculate_mean(x: np.array, y: np.array = 0, normalizing_factor: float = 1):
     return (mean, max_value), ('_mean', '_max_value')
 
 
-def remove_repeated(x: np.array, y: np.array = None, normalizing_factor: float = 1):
+def remove_repeated(x: np.ndarray, y: np.ndarray = None, normalizing_factor: float = 1):
     """
     Remove repeated entries on time axis.
     x and y must be rank 3 with dimensions (batch, time, coordinates)
@@ -106,7 +106,7 @@ def remove_repeated(x: np.array, y: np.array = None, normalizing_factor: float =
     return (out,), ('',)
 
 
-def execute(run_path, rotation_metrics=True):
+def execute(run_path, metrics_keys=None, tests=None, rotation_metrics=True):
     """
     Calculate all metrics
     """
@@ -125,6 +125,7 @@ def execute(run_path, rotation_metrics=True):
         ),
         force=dict(
             vars=['control_force_x', 'control_force_y'],
+            # func=lambda xy: ((xy.swapaxes(1, 2),), ('',)),
             func=calculate_error,
         ),
         trajectory=dict(
@@ -137,7 +138,7 @@ def execute(run_path, rotation_metrics=True):
         ),
         #angle=dict(
         #    vars=["obs_ang"],
-        #    func=lambda alpha: ((alpha.swapaxes(1, 2),), ('',)),
+        #    func=lambda alpha: ((-alpha.swapaxes(1, 2),), ('',)),
         #),
         #torque=dict(
         #    vars=["control_torque"],
@@ -145,7 +146,11 @@ def execute(run_path, rotation_metrics=True):
         #),
         #objective_angle=dict(
         #    vars=["reference_ang"],
-        #    func=lambda alpha: ((alpha.swapaxes(1, 2),), ('',)),
+        #    func=lambda alpha: ((-alpha.swapaxes(1, 2),), ('',)),
+        #),
+        #objective_angle_points=dict(
+        #    vars=["reference_ang"],
+        #    func=remove_repeated
         #),
         x=dict(
             vars=["obs_xy"],
@@ -165,21 +170,27 @@ def execute(run_path, rotation_metrics=True):
         )
     )
 
-    # run_path = root + run_folder
+    if not metrics_keys: metrics_keys = list(metrics.keys())
     # Pre process variables
-    tests = os.listdir(os.path.abspath(run_path + "/tests/"))
-    tests = [test for test in tests if 'test' in test]  # TODO only calculating metrics for one test
+    tests_folders = os.listdir(os.path.abspath(run_path + "/tests/"))
+    if tests:
+        tests = [test for test in tests_folders if any([(test_ in test) for test_ in tests])]
+    else:
+        tests = os.listdir(os.path.abspath(run_path + "/tests/"))
+        tests = [test for test in tests if 'test' in test]  # TODO only calculating metrics for one test
     for test in tests:
         datapath = f"{run_path}/tests/{test}/data/"
         # Get files cases
-        all_files = os.listdir(os.path.abspath(f"{datapath}/error_x/"))
+        all_files = [d for d in os.listdir(os.path.abspath(f"{datapath}/error_x/")) if d != '.directory']
         all_files = [file.split("error_x")[1] for file in all_files]  # Remove prefix
         cases = natsorted(tuple(set([file.split("case")[1][:4] for file in all_files])))
+        print(f"cases: {cases}")
         # Loop through metrics
         export_dict = {}
-        for metric_name, attrs in metrics.items():
+        for metric_name in metrics_keys:
             if not rotation_metrics and ('angle' in metric_name or 'torque' in metric_name):
                 continue
+            attrs = metrics[metric_name]
             vars = attrs['vars']
             func = attrs['func']
             values_all = collections.defaultdict(list)
@@ -209,6 +220,10 @@ def execute(run_path, rotation_metrics=True):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Calculate metrics from test simulations')
     parser.add_argument("run_path", help="Paths to folders containing model data")
+    parser.add_argument("--metrics", help="Which metrics will be computed", nargs='+', default=None)
+    parser.add_argument("--tests", help="Tests that will be used to calculate metrics", nargs='+', default=None)
     args = parser.parse_args()
     runs_path = args.run_path
-    execute(runs_path)
+    metrics = args.metrics
+    tests = args.tests
+    execute(runs_path, rotation_metrics=False, metrics_keys=metrics, tests=tests)

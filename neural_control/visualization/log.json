@@ -1,6 +1,6 @@
 {
-    "dataPath": "/home/felix/Code/HiWi/Brener/PhiFlow/neural_control/storage/simulation_data",
-    "sModel": "brener_setup_more_power_long_eps_3",
+    "dataPath": "/home/felix/Documents/GuidedResearch/",
+    "sModel": "G2",
     "sVar": [
         "obs_mask",
         "vx",
@@ -19,8 +19,8 @@
         "loss_pos",
         "loss_ang",
         "loss_vel",
-        "obs_xy",
-        "obs_xy",
+        "control_force_x",
+        "control_force_y",
         "obs_xy",
         "reference_x",
         "error_ang",
@@ -99,7 +99,7 @@
     ],
     "sKwargs": [
         "cmap='Greys', alpha=1, transpose=True, origin='lower'",
-        "cmap='viridis', transpose=True, origin='lower', alpha=0.8",
+        "cmap='viridis', transpose=True, origin='lower', alpha=0.8, vmin=-1, vmax=1",
         "create_legend=False, color='black'",
         "",
         "",
@@ -152,7 +152,7 @@
         0,
         1,
         0,
-        1,
+        0,
         0,
         0,
         0,
@@ -161,6 +161,6 @@
         1,
         0
     ],
-    "iUseTestData": 0,
-    "sTest": ""
+    "iUseTestData": 1,
+    "sTest": "test1_0"
 }

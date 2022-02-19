@@ -1,10 +1,35 @@
 {
+    "test0": {
+        "case0": {
+            "positions": [
+                [
+                    22.189541666838398,
+                    57.37707614296034
+                ]
+            ],
+            "help_i": [
+                -1
+            ],
+            "i": [
+                -1
+            ],
+            "smoke": {
+                "on": false
+            },
+            "n_steps": 1001,
+            "angles": [
+                0
+            ]
+        },
+        "initial_conditions_path": "/home/felix/Code/HiWi/Brener/PhiFlow/neural_control/storage/simulation_data/simple_simulation_sponge_0_5/",
+        "n_simulations": 20
+    },
     "test1": {
         "case0": {
             "positions": [
                 [
-                    54.07630415691364,
-                    59.51753653860291
+                    22.189541666838398,
+                    57.37707614296034
                 ]
             ],
             "help_i": [
@@ -402,8 +427,8 @@
         "case19": {
             "positions": [
                 [
-                    22.189541666838398,
-                    57.37707614296034
+                    22.740743851510302,
+                    54.751825541932824
                 ]
             ],
             "help_i": [
@@ -420,7 +445,7 @@
                 0
             ]
         },
-        "initial_conditions_path": "/home/felix/Code/HiWi/Brener/PhiFlow/neural_control/storage/simulation_data/simple_simulation_2/",
+        "initial_conditions_path": "/home/felix/Code/HiWi/Brener/PhiFlow/neural_control/storage/simulation_data/simple_simulation_sponge_0_2/",
         "n_simulations": 20
     },
     "test2": {
@@ -881,8 +906,8 @@
         "case19": {
             "positions": [
                 [
-                    22.740743851510302,
-                    54.751825541932824
+                    54.07630415691364,
+                    59.51753653860291
                 ]
             ],
             "help_i": [

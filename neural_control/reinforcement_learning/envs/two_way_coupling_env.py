@@ -1,40 +1,16 @@
 import shutil
-import time
 from typing import Any, Dict, List, Optional, Tuple
 import os
-#from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
-
-#from matplotlib.pyplot import contour
-#from modules import ResBlocksFeaturesExtractor
 
 import torch
 import numpy as np
 from gym import Env
 from gym.spaces import Box
-from stable_baselines3.sac import SAC
-#from stable_baselines3.ppo import PPO
-from stable_baselines3.common.monitor import Monitor
-#from stable_baselines3.common.vec_env import DummyVecEnv
-from stable_baselines3.common.callbacks import CallbackList
 from phi import math
 
 from InputsManager import InputsManager
 from misc.TwoWayCouplingSimulation import TwoWayCouplingSimulation
 from misc_funcs import calculate_loss, extract_inputs, Probes, prepare_export_folder, rotate
-from reinforcement_learning.envs.rew_norm_wrapper import RewNormWrapper
-from reinforcement_learning.envs.skip_stack_wrapper import SkipStackWrapper, BrenerStacker
-from reinforcement_learning.envs.seed_on_reset_wrapper import SeedOnResetWrapper
-from reinforcement_learning.callbacks import EveryNRolloutsPlusStartFinishFunctionCallback, RecordInfoScalarsCallback
-
-
-def profile(fn):
-    def wrapper(*args, **kwargs):
-        before = time.time()
-        result = fn(*args, **kwargs)
-        print("%s ran for %f seconds" % (str(fn), time.time() - before))
-        return result
-    
-    return wrapper
 
 
 class TwoWayCouplingEnv(Env):
@@ -112,7 +88,7 @@ class TwoWayCouplingEnv(Env):
         self.pos_error = None
         self.ang_error = None
         self.rew = None
-        self.rew_baseline = np.array(0)
+        self.rew_baseline = None
 
         self.sim_export_path = sim_export_path
         self.export_vars = export_vars
@@ -161,7 +137,6 @@ class TwoWayCouplingEnv(Env):
             obs[np.isnan(obs)] = 0
             done = True
 
-        #if np.sum(self.sim.obstacle.velocity.numpy() ** 2) > self.ref_vars['max_vel'] ** 2:
         if math.max(math.abs(self.sim.velocity.values)) * self.dt > 1.5:
             print('Hit maximum velocity, ending trajectory')
             done = True
@@ -170,11 +145,6 @@ class TwoWayCouplingEnv(Env):
             print('Hit maximum angular velocity, ending trajectory')
             done = True
 
-        # Short hack TODO
-        loss_inputs['control_force_x'] = self.forces[0:1]
-        loss_inputs['control_force_y'] = self.forces[1:2]
-        for dim in ['x', 'y']:
-            loss_inputs[f'd_control_force_{dim}'] = loss_inputs[f"control_force_{dim}"]
 
         self.rew = self._get_rew(loss_inputs, done, self.rew_baseline)
 
@@ -216,7 +186,6 @@ class TwoWayCouplingEnv(Env):
         pass
 
     def seed(self, seed=0) -> None:
-        print("this is seed, yo")
         torch.manual_seed(seed)
 
     def _generate_objectives(self) -> Tuple[torch.Tensor, torch.Tensor]:
@@ -238,8 +207,19 @@ class TwoWayCouplingEnv(Env):
         return Box(-np.inf, np.inf, shape=shape, dtype=np.float32)
 
     def _extract_inputs(self) -> Tuple[np.ndarray, dict]:
-        obs, loss = extract_inputs(self.input_vars, self.sim, self.probes, self.pos_objective, self.ang_objective, self.ref_vars, self.translation_only)
-        return obs.cpu().numpy().reshape(-1), loss
+        obs, loss_inputs = extract_inputs(self.input_vars, self.sim, self.probes, self.pos_objective, self.ang_objective, self.ref_vars, self.translation_only)
+
+        if self.forces is not None:
+            forces = self.forces.detach().clone()
+        else:
+            forces = torch.zeros(4, device=self.sim.device)
+
+        loss_inputs['control_force_x'] = forces[0:1]
+        loss_inputs['control_force_y'] = forces[1:2]
+        for dim in ['x', 'y']:
+            loss_inputs[f'd_control_force_{dim}'] = loss_inputs[f"control_force_{dim}"]
+            
+        return obs.cpu().numpy().reshape(-1), loss_inputs
 
     def _get_obs(self) -> np.ndarray:
         return self._extract_inputs()[0]
@@ -257,7 +237,7 @@ class TwoWayCouplingEnv(Env):
         #rew = np.max([rew, -30])
         return rew
 
-    def _dp_rew(self, loss_inputs: dict, done: bool, baseline: Optional[np.ndarray]=None) -> np.ndarray:
+    def _love_rew(self, loss_inputs: dict, done: bool, baseline: Optional[np.ndarray]=None) -> np.ndarray:
         loss, _ = calculate_loss(loss_inputs, self.hyperparams, self.translation_only)
         rew = -1 * loss
 
@@ -267,7 +247,7 @@ class TwoWayCouplingEnv(Env):
         return rew.cpu().numpy()
 
     def _get_rew(self, loss_inputs: dict, done: bool, baseline: Optional[np.ndarray]=None) -> np.ndarray:
-        return self._g_rew(loss_inputs, done, baseline)
+        return self._love_rew(loss_inputs, done, baseline)
 
     def _obstacle_leaving_domain(self) -> bool:
         obstacle_center = self.sim.obstacle.geometry.center
@@ -305,11 +285,11 @@ class TwoWayCouplingConfigEnv(TwoWayCouplingEnv):
         export_vars = config.export_vars
         export_stride = config.export_stride
 
-        n_steps = config.online['n_timesteps']
-        destination_margins = config.online['destinations_margins']
-        hyperparams = config.online['hyperparams']
-        sim_import_path = os.path.join(simulation_storage_path, config.online['simulation_path'])
-        sim_export_path = os.path.join(simulation_storage_path, config.online['export_path'])
+        n_steps = config.rl['n_timesteps']
+        destination_margins = np.array(config.rl['destinations_margins'])
+        hyperparams = config.rl['loss_hyperparams']
+        sim_import_path = os.path.join(simulation_storage_path, config.rl['simulation_path'])
+        sim_export_path = os.path.join(simulation_storage_path, config.rl['export_path'])
 
         dt = config.simulation['dt']
         domain_size = config.simulation['domain_size']
@@ -326,7 +306,6 @@ class TwoWayCouplingConfigEnv(TwoWayCouplingEnv):
         inflow_velocity = config.simulation['reference_velocity']
 
         input_vars = config.nn_vars
-
         ref_vars = dict(
             length=obs_width,
             angle=math.PI,
@@ -372,52 +351,3 @@ class TwoWayCouplingConfigEnv(TwoWayCouplingEnv):
             ref_vars=ref_vars,
             hyperparams=hyperparams,
         )
-
-def get_env(skip: int=8, stack: int=4) -> Env:
-    inputs_path = os.path.join(os.path.dirname(__file__), os.pardir, os.pardir, 'inputs.json')
-    
-    env = TwoWayCouplingConfigEnv(inputs_path)
-    env = BrenerStacker(env, 4, 4, 2, True)
-    #env = SkipStackWrapper(env, skip=skip, stack=stack)
-    #env = RewNormWrapper(env, None)
-    env = SeedOnResetWrapper(env)
-    #env = Monitor(env, info_keywords=('rew_unnormalized',))
-    
-    print('Observation space shape: %s' % str(env.observation_space.shape))
-    return env
-    
-def train_model(name: str, log_dir: str, n_timesteps: int, tweak_mode: bool, **agent_kwargs) -> SAC:
-    storage_folder_path = os.path.join(os.path.dirname(__file__), os.pardir, os.pardir, 'storage')
-
-    model_path = os.path.join(storage_folder_path, "networks", name)
-    tb_log_path = os.path.join(storage_folder_path, "tensorboard", log_dir)
-    if tweak_mode:
-        tb_log_path = None
-    env = get_env()
-
-    print(model_path)
-    if os.path.exists(model_path + '.zip') and not tweak_mode:
-        print('model path exists, loading model')
-        model = SAC.load(model_path, env)
-    else:
-        print('creating new model...')
-        model = SAC('MlpPolicy', env, tensorboard_log=tb_log_path, verbose=1, **agent_kwargs)
-
-    def store_fn(_):
-        print(f"Storing model to {model_path}...")
-        model.save(model_path)
-        print("Stored model.")
-
-    callback = CallbackList([
-        EveryNRolloutsPlusStartFinishFunctionCallback(20000, store_fn),
-        #RecordInfoScalarsCallback('rew_unnormalized'),
-    ])
-
-    if tweak_mode:
-        callback = None
-
-    model.learn(total_timesteps=n_timesteps, callback=callback, tb_log_name=name)
-
-if __name__ == '__main__':
-    #train_model('128_128_128_3e-4_2grst_bs128_angvelpen_rewnorm_test', 'hparams_tuning', 20000, batch_size=128, learning_starts=32, learning_rate=3e-4, gradient_steps=2, policy_kwargs=dict(net_arch=[128, 128, 128]))
-    train_model('g_rew', 'simple_env', 300000, tweak_mode=False, batch_size=256, gradient_steps=3, learning_starts=128, policy_kwargs=dict(net_arch=[38, 38]))
