@@ -139,7 +139,7 @@ class TwoWayCouplingEnv(Env):
         self.pos_objective, self.ang_objective = self._generate_objectives()
         obs, loss_inputs = self._extract_inputs()
         self.pos_error = np.array([val.cpu().numpy() for val in [loss_inputs[key] for key in ['error_x', 'error_y']]])
-        #self.rew_baseline = self._get_rew(loss, False)
+        self.rew_baseline = self._get_rew(loss_inputs, False)
         print("pos objective: %s" % str(self.pos_objective))
         return obs
         
@@ -161,7 +161,8 @@ class TwoWayCouplingEnv(Env):
             obs[np.isnan(obs)] = 0
             done = True
 
-        if np.sum(self.sim.obstacle.velocity.numpy() ** 2) > self.ref_vars['max_vel'] ** 2:
+        #if np.sum(self.sim.obstacle.velocity.numpy() ** 2) > self.ref_vars['max_vel'] ** 2:
+        if math.max(math.abs(self.sim.velocity.values)) * self.dt > 1.5:
             print('Hit maximum velocity, ending trajectory')
             done = True
 
@@ -176,6 +177,7 @@ class TwoWayCouplingEnv(Env):
             loss_inputs[f'd_control_force_{dim}'] = loss_inputs[f"control_force_{dim}"]
 
         self.rew = self._get_rew(loss_inputs, done, self.rew_baseline)
+
         info = {}
 
         return obs, self.rew, done, info
@@ -242,20 +244,30 @@ class TwoWayCouplingEnv(Env):
     def _get_obs(self) -> np.ndarray:
         return self._extract_inputs()[0]
 
-    def _get_rew(self, loss_inputs: dict, done: bool, baseline: Optional[np.ndarray]=None) -> np.ndarray:
+    def _g_rew(self, loss_inputs: dict, done: bool, baseline: Optional[np.ndarray]=None) -> np.ndarray:
+        self.pos_error = np.array([val.cpu().numpy() for val in [loss_inputs[key] for key in ['error_x', 'error_y']]])
+        rew = -1 * np.sum(self.pos_error ** 2)
+
+        if baseline:
+            rew = (rew - baseline) / np.abs(baseline)
+
+        if np.sum(self.pos_error ** 2) < 0.15 ** 2:
+            rew += 9
+
+        #rew = np.max([rew, -30])
+        return rew
+
+    def _dp_rew(self, loss_inputs: dict, done: bool, baseline: Optional[np.ndarray]=None) -> np.ndarray:
         loss, _ = calculate_loss(loss_inputs, self.hyperparams, self.translation_only)
         rew = -1 * loss
+
+        if done and self.step_idx != self.n_steps:
+            rew -= 1000
+        
         return rew.cpu().numpy()
-        #new_pos_error = np.array([val.cpu().numpy() for val in [loss_inputs[key] for key in ['error_x', 'error_y']]])
-        #pos_error_diff = np.sum((self.pos_error - new_pos_error)**2)
-        #self.pos_error = new_pos_error
 
-        #vel_reward = -np.sum(self.sim.obstacle.velocity.numpy() ** 2) / self.ref_vars['max_vel'] ** 2
-
-        #if baseline:
-        #    rew = (rew - baseline) / np.abs(baseline)
-
-        #return pos_error_diff * self.hyperparams['spatial'] + vel_reward * self.hyperparams['velocity']
+    def _get_rew(self, loss_inputs: dict, done: bool, baseline: Optional[np.ndarray]=None) -> np.ndarray:
+        return self._g_rew(loss_inputs, done, baseline)
 
     def _obstacle_leaving_domain(self) -> bool:
         obstacle_center = self.sim.obstacle.geometry.center
@@ -324,7 +336,7 @@ class TwoWayCouplingConfigEnv(TwoWayCouplingEnv):
             torque=obs_inertia * max_ang_acc,
             time=obs_width / inflow_velocity,
             destination_zone_size=domain_size - destination_margins * 2,
-            max_vel=1 / (dt * 0.9),
+            max_vel=0.25 / dt,
             max_ang_vel=max_ang_vel,
         )
 
@@ -374,15 +386,17 @@ def get_env(skip: int=8, stack: int=4) -> Env:
     print('Observation space shape: %s' % str(env.observation_space.shape))
     return env
     
-def train_model(name: str, log_dir: str, n_timesteps: int, **agent_kwargs) -> SAC:
+def train_model(name: str, log_dir: str, n_timesteps: int, tweak_mode: bool, **agent_kwargs) -> SAC:
     storage_folder_path = os.path.join(os.path.dirname(__file__), os.pardir, os.pardir, 'storage')
 
     model_path = os.path.join(storage_folder_path, "networks", name)
     tb_log_path = os.path.join(storage_folder_path, "tensorboard", log_dir)
+    if tweak_mode:
+        tb_log_path = None
     env = get_env()
 
     print(model_path)
-    if os.path.exists(model_path + '.zip'):
+    if os.path.exists(model_path + '.zip') and not tweak_mode:
         print('model path exists, loading model')
         model = SAC.load(model_path, env)
     else:
@@ -399,8 +413,11 @@ def train_model(name: str, log_dir: str, n_timesteps: int, **agent_kwargs) -> SA
         #RecordInfoScalarsCallback('rew_unnormalized'),
     ])
 
+    if tweak_mode:
+        callback = None
+
     model.learn(total_timesteps=n_timesteps, callback=callback, tb_log_name=name)
 
 if __name__ == '__main__':
     #train_model('128_128_128_3e-4_2grst_bs128_angvelpen_rewnorm_test', 'hparams_tuning', 20000, batch_size=128, learning_starts=32, learning_rate=3e-4, gradient_steps=2, policy_kwargs=dict(net_arch=[128, 128, 128]))
-    train_model('brener_rew', 'simple_env', 300000, batch_size=256, learning_starts=128, policy_kwargs=dict(net_arch=[38, 38]))
+    train_model('g_rew', 'simple_env', 300000, tweak_mode=False, batch_size=256, gradient_steps=3, learning_starts=128, policy_kwargs=dict(net_arch=[38, 38]))
