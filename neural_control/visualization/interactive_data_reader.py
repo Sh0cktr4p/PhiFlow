@@ -413,13 +413,13 @@ class Interactive_Data_Reader(Tk):
         except:
             print("Invalid path")
             return
-        variables = natsorted(list(set([file.split("_case")[0] for file in variables])))
+        variables = [d for d in natsorted(list(set([file.split("_case")[0] for file in variables]))) if d != '.directory']
         for var, oVarSelector, checkBox in zip(self.sVar, self.oVarSelector, self.iUpdatePlot):
             if var.get() not in variables:
                 checkBox.set(0)
             update_dropdown(oVarSelector, var, variables)
         # Update cases selector dropdown
-        allCases = os.listdir(path + "/" + self.sModel.get() + self.datafolder + variables[0])
+        allCases = [d for d in os.listdir(path + "/" + self.sModel.get() + self.datafolder + variables[0]) if d != '.directory']
         cases = natsorted(list(set([file.split("case")[1][:4] for file in allCases])))
         try:  # Try to load file with all snapshots first
             data = np.load(f"{path}/{self.sModel.get()}/{self.datafolder}/{variables[0]}/{variables[0]}_case{self.sCaseSelector.get():04d}.npy")

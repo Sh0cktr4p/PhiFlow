@@ -188,6 +188,7 @@ if __name__ == "__main__":
                             nn_inputs_past = update_inputs(nn_inputs_past, nn_inputs_present, control_effort)
                     # Stop simulation if obstacle escapes domain
                     if math.any(sim.obstacle.geometry.center > inp.simulation['domain_size']) or math.any(sim.obstacle.geometry.center < (0, 0)):
+                        print('Obstacle escaped domain!')
                         break
                     # Time estimate variables
                     now = time.time()
@@ -221,7 +222,7 @@ if __name__ == "__main__":
                         remaining = i_remaining * delta
                         remaining_h = np.floor(remaining / 60. / 60.)
                         remaining_m = np.floor(remaining / 60. - remaining_h * 60.)
-                        print(f"Time left: {remaining_h:.0f}h and {remaining_m:.0f} min")
+                        #print(f"Time left: {remaining_h:.0f}h and {remaining_m:.0f} min")
                     # export_vars = ['vorticity', 'obs_mask', 'obs_xy', 'control_force_x', 'control_force_y', 'fluid_force_x', 'fluid_force_y', 'reference_x', 'reference_y', 'error_x', 'error_y', ]
                     sim.export_data(export_path, test_i, i, export_vars, is_first_export)
                     is_first_export = False

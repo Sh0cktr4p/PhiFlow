@@ -48,6 +48,32 @@
             "proximity": 0.1
         }
     },
+    "rl": {
+        "simulation_path": "simple_simulation_sponge_0_1",
+        "export_path": "",
+        "n_timesteps": 1000,
+        "n_iterations": 300000,
+        "model_export_stride": 20000,
+        "destinations_margins": [
+            20,
+            20
+        ],
+        "training_params": {
+            "learning_rate": 3e-4,
+            "gradient_steps": 3
+        },
+        "loss_hyperparams": {
+            "spatial": 15,
+            "velocity": 5,
+            "force": 0.5,
+            "delta_force": 0.0,
+            "torque": 0.1,
+            "angle": 30,
+            "ang_velocity": 0.2,
+            "delta_torque": 0.025,
+            "proximity": 0.1
+        }
+    },
     "supervised": {
         "n_iterations": 150001,
         "lr_half_life": 15000,
@@ -75,7 +101,7 @@
         }
     },
     "simulation": {
-        "path": "/home/trost/guided_research/PhiFlow/neural_control/storage/simulation_data/simple_simulation_2/",
+        "path": "/home/felix/Code/HiWi/Brener/PhiFlow/neural_control/storage/simulation_data/simple_simulation_sponge_1_0/",
         "n_steps": 501,
         "re": 1000,
         "tripping_on": false,
@@ -95,7 +121,7 @@
             40,
             40
         ],
-        "sponge_intensity": 0.01,
+        "sponge_intensity": 0.1,
         "sponge_size": [
             5,
             5,

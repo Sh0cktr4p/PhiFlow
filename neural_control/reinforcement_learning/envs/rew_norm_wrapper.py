@@ -6,10 +6,11 @@ from gym import Env, Wrapper
 
 
 class RewNormWrapper(Wrapper):
-    def __init__(self, env: Env, rew_rms: Optional[RunningMeanStd]=None):
+    def __init__(self, env: Env, rew_rms: Optional[RunningMeanStd]=None, norm_variance: bool=False):
         super().__init__(env)
         self.unnormalized_ep_rew = None
         self.rew_rms = rew_rms or RunningMeanStd()
+        self.norm_variance = norm_variance
 
     def reset(self) -> np.ndarray:
         obs = self.env.reset()
@@ -28,6 +29,7 @@ class RewNormWrapper(Wrapper):
 
     def reward(self, rew: np.ndarray)-> np.ndarray:
         self.rew_rms.update(rew.reshape(-1))
-        #norm_rew = (rew - self.rew_rms.mean) / np.sqrt(self.rew_rms.var)
         norm_rew = (rew - self.rew_rms.mean)
+        if self.norm_variance:
+            norm_rew / np.sqrt(self.rew_rms.var)
         return norm_rew

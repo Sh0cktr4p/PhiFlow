@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 # colors = cycle(plt.rcParams["axes.prop_cycle"].by_key()["color"])
 
 
-def calculate_variability(y: np.array, y_additional: np.array = 0, normalizing_factor: float = 1):
+def calculate_variability(y: np.ndarray, y_additional: np.ndarray = 0, normalizing_factor: float = 1):
     """
     Calculate how much y varies between consecutive points on average
 
@@ -24,7 +24,7 @@ def calculate_variability(y: np.array, y_additional: np.array = 0, normalizing_f
     return (np.mean(np.abs(values[1:] - values[:-1])),), ('',)
 
 
-def calculate_error(x: np.array, y: np.array = 0, normalizing_factor: float = 1):
+def calculate_error(x: np.ndarray, y: np.ndarray = 0, normalizing_factor: float = 1):
     """
     Calculate mena spatial error from x and y components and its standard deviation
 
@@ -38,13 +38,14 @@ def calculate_error(x: np.array, y: np.array = 0, normalizing_factor: float = 1)
         labels: labels of outputs
 
     """
+    print(type(x))
     error = np.sqrt(x**2 + y**2) / normalizing_factor
     sigma = np.std(error, axis=0)
     error = np.mean(error, axis=0)
     return (error, sigma), ('', '_stdd')
 
 
-def calculate_stopping_error(x: np.array, y: np.array = 0, normalizing_factor: float = 1):
+def calculate_stopping_error(x: np.ndarray, y: np.ndarray = 0, normalizing_factor: float = 1):
     """
     Mean error of the last 40% of the trajectory
 
@@ -67,7 +68,7 @@ def calculate_stopping_error(x: np.array, y: np.array = 0, normalizing_factor: f
     return (last_mean_error, last_sigma), ('', '_stdd')
 
 
-def calculate_mean(x: np.array, y: np.array = 0, normalizing_factor: float = 1):
+def calculate_mean(x: np.ndarray, y: np.ndarray = 0, normalizing_factor: float = 1):
     """
     Integrate coordinates x and y
 
@@ -87,7 +88,7 @@ def calculate_mean(x: np.array, y: np.array = 0, normalizing_factor: float = 1):
     return (mean, max_value), ('_mean', '_max_value')
 
 
-def remove_repeated(x: np.array, y: np.array = None, normalizing_factor: float = 1):
+def remove_repeated(x: np.ndarray, y: np.ndarray = None, normalizing_factor: float = 1):
     """
     Remove repeated entries on time axis.
     x and y must be rank 3 with dimensions (batch, time, coordinates)
@@ -167,14 +168,15 @@ def execute(run_path, rotation_metrics=True):
 
     # run_path = root + run_folder
     # Pre process variables
-    tests = os.listdir(os.path.abspath(run_path + "/tests/"))
+    tests = [d for d in os.listdir(os.path.abspath(run_path + "/tests/")) if d != '.directory']
     tests = [test for test in tests if 'test' in test]  # TODO only calculating metrics for one test
     for test in tests:
         datapath = f"{run_path}/tests/{test}/data/"
         # Get files cases
-        all_files = os.listdir(os.path.abspath(f"{datapath}/error_x/"))
+        all_files = [d for d in os.listdir(os.path.abspath(f"{datapath}/error_x/")) if d != '.directory']
         all_files = [file.split("error_x")[1] for file in all_files]  # Remove prefix
         cases = natsorted(tuple(set([file.split("case")[1][:4] for file in all_files])))
+        print(f"cases: {cases}")
         # Loop through metrics
         export_dict = {}
         for metric_name, attrs in metrics.items():

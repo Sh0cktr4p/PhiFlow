@@ -5,10 +5,11 @@ import numpy as np
 
 
 def group_frames(data_dir):
-    variables = os.listdir(data_dir)
+    variables = [d for d in os.listdir(data_dir) if d != '.directory']
+
     variables_iter = iter(variables)
     for variable in variables_iter:
-        files = natsorted(os.listdir(data_dir + variable))
+        files = natsorted([d for d in os.listdir(data_dir + variable) if d != '.directory'])
         cases = natsorted(list(set([file.split("case")[1][:4] for file in files])))
         for case in cases:
             # print(f"Grouping frames for {variable} case {case}")
@@ -27,8 +28,8 @@ def group_frames(data_dir):
                 frames[i, ...] = np.load(f"{data_dir}/{variable}/{file}")
             np.save(f"{data_dir}/{variable}/{variable}_case{case}.npy", frames)
             # # Erase individual frame files
-            #for file in files_to_load:
-            #    os.remove(data_dir + variable + "/" + file)
+            for file in files_to_load:
+                os.remove(data_dir + variable + "/" + file)
 
 
 def execute(input_dir):
@@ -52,6 +53,6 @@ def execute(input_dir):
 
 if __name__ == "__main__":
     argparser = argparse.ArgumentParser(description='Concatenate frames')
-    argparser.add_argument('input_dir', type=str, help='Input directory')
+    argparser.add_argument('input_dir', type=str, help='Input directory', default='/home/felix/Documents/GuidedResearch/working/')
     input_dir = argparser.parse_args().input_dir
     execute(input_dir)
