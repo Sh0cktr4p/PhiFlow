@@ -3,14 +3,18 @@ import shutil
 from argparse import ArgumentParser
 
 from gym import Env
-from reinforcement_learning.extract_model import store_sac_actor_as_torch_module
 from stable_baselines3.sac import SAC
+from stable_baselines3.common.monitor import Monitor
 from stable_baselines3.common.callbacks import CallbackList
+from stable_baselines3.common.vec_env.dummy_vec_env import DummyVecEnv
+from stable_baselines3.common.vec_env.subproc_vec_env import SubprocVecEnv
 
-from reinforcement_learning.envs.two_way_coupling_env import TwoWayCouplingConfigEnv
-from reinforcement_learning.envs.stack_observations_wrapper import StackObservations
-from reinforcement_learning.envs.seed_on_reset_wrapper import SeedOnResetWrapper
-from reinforcement_learning.callbacks import EveryNTimestepsPlusStartFinishFunctionCallback
+from envs.two_way_coupling_env import TwoWayCouplingConfigEnv
+from envs.stack_observations_wrapper import StackObservations
+from envs.seed_on_reset_wrapper import SeedOnResetWrapper
+from extract_model import store_sac_actor_as_torch_module
+from callbacks import EveryNTimestepsPlusStartFinishFunctionCallback
+
 from InputsManager import InputsManager
 
 
@@ -20,12 +24,18 @@ TORCH_MODEL_FILENAME_TEMPLATE = 'trained_model_%04i.pth'
 
 
 def get_env(config_path: str) -> Env:
-    env = TwoWayCouplingConfigEnv(config_path)
-    env = StackObservations(env, n_present_features=4, n_past_features=4, past_window=2, append_past_actions=True)
-    env = SeedOnResetWrapper(env)
+    def get_env():
+        env = TwoWayCouplingConfigEnv(config_path)
+        env = StackObservations(env, n_present_features=4, n_past_features=4, past_window=2, append_past_actions=True)
+        env = SeedOnResetWrapper(env)
+        env = Monitor(env)
+        return env
     
-    print('Observation space shape: %s' % str(env.observation_space.shape))
-    return env
+    #venv = DummyVecEnv([get_env for _ in range(4)])
+    venv = SubprocVecEnv([get_env for _ in range(6)])
+
+    print('Observation space shape: %s' % str(venv.observation_space.shape))
+    return venv
 
 
 def create_model_folder(name: str, storage_base_path: str, config_path: str):
@@ -70,7 +80,7 @@ if __name__ == '__main__':
     base_storage_directory = os.path.join(base_directory, 'storage')
     default_config_path = os.path.join(base_directory, 'inputs.json')
     default_model_storage_path = os.path.join(base_storage_directory, 'networks')
-    default_log_storage_path = os.path.join(base_storage_directory, 'tensorboard')
+    default_log_storage_path = os.path.join(base_storage_directory, 'tensorboard', 'simple_env')
 
     parser = ArgumentParser()
     parser.add_argument('-n', '--name', dest='name', type=str, help='model name, no storing if not specified')

@@ -10,7 +10,7 @@ from phi import math
 
 from InputsManager import InputsManager
 from misc.TwoWayCouplingSimulation import TwoWayCouplingSimulation
-from misc_funcs import calculate_loss, extract_inputs, Probes, prepare_export_folder, rotate
+from misc.misc_funcs import calculate_loss, extract_inputs, Probes, prepare_export_folder, rotate
 
 
 class TwoWayCouplingEnv(Env):
@@ -117,6 +117,8 @@ class TwoWayCouplingEnv(Env):
         self.pos_error = np.array([val.cpu().numpy() for val in [loss_inputs[key] for key in ['error_x', 'error_y']]])
         self.rew_baseline = self._get_rew(loss_inputs, False)
         print("pos objective: %s" % str(self.pos_objective))
+
+        assert isinstance(obs, np.ndarray)
         return obs
         
     def step(self, action: np.ndarray) -> Tuple[np.ndarray, np.ndarray, bool, Dict[str, Any]]:
@@ -149,6 +151,10 @@ class TwoWayCouplingEnv(Env):
         self.rew = self._get_rew(loss_inputs, done, self.rew_baseline)
 
         info = {}
+
+        assert isinstance(obs, np.ndarray)
+        assert isinstance(self.rew, np.ndarray)
+        assert isinstance(done, bool)
 
         return obs, self.rew, done, info
 
@@ -251,7 +257,7 @@ class TwoWayCouplingEnv(Env):
 
     def _obstacle_leaving_domain(self) -> bool:
         obstacle_center = self.sim.obstacle.geometry.center
-        return math.any(obstacle_center > self.domain_size) or math.any(obstacle_center < (0, 0))
+        return bool(math.any(obstacle_center > self.domain_size) or math.any(obstacle_center < (0, 0)))
 
     def _split_action_to_force_torque(self, action: np.ndarray) -> Tuple[torch.Tensor, torch.Tensor]:
         control_effort = torch.tensor(action).to(self.sim.device)
