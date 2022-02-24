@@ -49,7 +49,7 @@
         }
     },
     "rl": {
-        "simulation_path": "simple_simulation_3",
+        "simulation_path": "simple_simulation_sponge_0_02",
         "export_path": "",
         "n_timesteps": 1000,
         "n_iterations": 300000,

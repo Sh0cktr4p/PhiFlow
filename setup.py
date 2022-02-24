@@ -141,7 +141,10 @@ setup(
               'phi.struct',
               'phi.tf',
               'phi.torch',
-              'webglviewer'],
+              'webglviewer',
+              'neural_control',
+              'neural_control.misc',
+              ],
     cmdclass={
         'tf_cuda': CudaCommand,
     },
@@ -154,7 +157,7 @@ setup(
     author_email='philipp.holl@tum.de',
     url='https://github.com/tum-pbs/PhiFlow',
     include_package_data=True,
-    install_requires=['scipy', 'dash', 'plotly', 'imageio', 'matplotlib'],
+    install_requires=['scipy', 'dash', 'plotly', 'imageio', 'matplotlib', 'natsort', 'tensorboard', 'stable-baselines3'],
     classifiers=[
         'Development Status :: 5 - Production/Stable',
         'Intended Audience :: Developers',

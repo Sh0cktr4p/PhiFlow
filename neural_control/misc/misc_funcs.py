@@ -1,10 +1,12 @@
+import os
+from collections import OrderedDict, defaultdict
 from typing import Iterable, Tuple
 import torch
-from TwoWayCouplingSimulation import *
-from Probes import Probes
-from collections import OrderedDict, defaultdict
+
 from phi.torch.flow import *
-import os
+
+from .TwoWayCouplingSimulation import *
+from .Probes import Probes
 
 
 def update_inputs(past_inputs: torch.Tensor, present_inputs: torch.Tensor, *control_effort: torch.Tensor) -> torch.tensor:

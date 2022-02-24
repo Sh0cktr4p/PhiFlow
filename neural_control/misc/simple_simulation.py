@@ -1,8 +1,10 @@
 import os
 import numpy as np
-from InputsManager import InputsManager
-from TwoWayCouplingSimulation import TwoWayCouplingSimulation
 import torch
+from neural_control.InputsManager import InputsManager
+
+from .TwoWayCouplingSimulation import TwoWayCouplingSimulation
+
 if __name__ == "__main__":
     export_vars = [
         "pressure",

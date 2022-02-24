@@ -8,9 +8,9 @@ from gym import Env
 from gym.spaces import Box
 from phi import math
 
-from InputsManager import InputsManager
-from misc.TwoWayCouplingSimulation import TwoWayCouplingSimulation
-from misc.misc_funcs import calculate_loss, extract_inputs, Probes, prepare_export_folder, rotate
+from neural_control.InputsManager import InputsManager
+from neural_control.misc.TwoWayCouplingSimulation import TwoWayCouplingSimulation
+from neural_control.misc.misc_funcs import calculate_loss, extract_inputs, Probes, prepare_export_folder, rotate
 
 
 class TwoWayCouplingEnv(Env):
