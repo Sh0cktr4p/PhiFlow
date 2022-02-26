@@ -9,6 +9,8 @@ from stable_baselines3.common.callbacks import CallbackList
 from stable_baselines3.common.vec_env.dummy_vec_env import DummyVecEnv
 from stable_baselines3.common.vec_env.subproc_vec_env import SubprocVecEnv
 
+from phi import math
+
 from neural_control.InputsManager import InputsManager
 
 from envs.two_way_coupling_env import TwoWayCouplingConfigEnv
@@ -18,11 +20,21 @@ from extract_model import store_sac_actor_as_torch_module
 from callbacks import EveryNTimestepsPlusStartFinishFunctionCallback
 
 
-
 CONFIG_FILENAME = 'inputs.json'
 AGENT_FILENAME = 'agent.zip'
 TORCH_MODEL_FILENAME_TEMPLATE = 'trained_model_%04i.pth'
 
+
+def create_ref_vars(inp: InputsManager) -> dict:
+    return dict(
+        velocity=inp.simulation['reference_velocity'],
+        length=inp.simulation['obs_width'],
+        force=inp.simulation['obs_mass'] * inp.max_acc,
+        angle=math.PI,
+        torque=inp.simulation['obs_inertia'] * inp.max_ang_acc,
+        time=inp.simulation['obs_width'] / inp.simulation['reference_velocity'],
+        ang_velocity=inp.simulation['reference_velocity'] / inp.simulation['obs_width']
+    ) 
 
 def get_env(config_path: str, env_count: int) -> Env:
     def get_env():
@@ -46,7 +58,11 @@ def create_model_folder(name: str, storage_base_path: str, config_path: str):
     assert not os.path.exists(path_to_model_folder)
 
     os.mkdir(path_to_model_folder)
-    shutil.copyfile(config_path, os.path.join(path_to_model_folder, CONFIG_FILENAME))
+    inp = InputsManager(config_path, only=['rl'])
+    inp.add_values(os.path.join(inp.rl['simulation_path'], CONFIG_FILENAME), ['simulation'])
+    inp.calculate_properties()
+    inp.ref_vars = create_ref_vars(inp)
+    inp.export(os.path.join(path_to_model_folder, CONFIG_FILENAME))
 
     return path_to_model_folder    
 

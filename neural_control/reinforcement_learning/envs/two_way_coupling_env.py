@@ -143,11 +143,6 @@ class TwoWayCouplingEnv(Env):
             print('Hit maximum velocity, ending trajectory')
             done = True
 
-        if not self.translation_only and np.abs(self.sim.obstacle.angular_velocity.numpy()) > self.ref_vars['max_ang_vel']:
-            print('Hit maximum angular velocity, ending trajectory')
-            done = True
-
-
         self.rew = self._get_rew(loss_inputs, done, self.rew_baseline)
 
         info = {}
@@ -213,6 +208,7 @@ class TwoWayCouplingEnv(Env):
         return Box(-np.inf, np.inf, shape=shape, dtype=np.float32)
 
     def _extract_inputs(self) -> Tuple[np.ndarray, dict]:
+        current_input_vars = [var for var in self.input_vars if 'control' not in var]
         obs, loss_inputs = extract_inputs(self.input_vars, self.sim, self.probes, self.pos_objective, self.ang_objective, self.ref_vars, self.translation_only)
 
         if self.forces is not None:
@@ -274,15 +270,12 @@ class TwoWayCouplingEnv(Env):
 
 class TwoWayCouplingConfigEnv(TwoWayCouplingEnv):
     def __init__(self, config_path):
-        simulation_storage_path = os.path.join(os.path.dirname(__file__), os.pardir, os.pardir, 'storage', 'simulation_data')
         config = InputsManager(config_path)
         config.calculate_properties()
 
         device = config.device
         max_acc = config.max_acc
-        max_vel = config.max_vel
         max_ang_acc = config.max_ang_acc
-        max_ang_vel = config.max_ang_vel
         translation_only = config.translation_only
         probes_offset = config.probes_offset
         probes_size = config.probes_size
@@ -294,8 +287,8 @@ class TwoWayCouplingConfigEnv(TwoWayCouplingEnv):
         n_steps = config.rl['n_timesteps']
         destination_margins = np.array(config.rl['destinations_margins'])
         hyperparams = config.rl['loss_hyperparams']
-        sim_import_path = os.path.join(simulation_storage_path, config.rl['simulation_path'])
-        sim_export_path = os.path.join(simulation_storage_path, config.rl['export_path'])
+        sim_import_path = config.rl['simulation_path']
+        sim_export_path = config.rl['export_path']
 
         dt = config.simulation['dt']
         domain_size = config.simulation['domain_size']
@@ -313,16 +306,13 @@ class TwoWayCouplingConfigEnv(TwoWayCouplingEnv):
 
         input_vars = config.nn_vars
         ref_vars = dict(
-            length=obs_width,
-            angle=math.PI,
             velocity=inflow_velocity,
-            ang_velocity=inflow_velocity / obs_width,
+            length=obs_width,
             force=obs_mass * max_acc,
+            angle=math.PI,
             torque=obs_inertia * max_ang_acc,
             time=obs_width / inflow_velocity,
-            destination_zone_size=domain_size - destination_margins * 2,
-            max_vel=0.25 / dt,
-            max_ang_vel=max_ang_vel,
+            ang_velocity=inflow_velocity / obs_width,
         )
 
         print("Ref vars: %s" % ref_vars)
