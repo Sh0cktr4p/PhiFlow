@@ -19,6 +19,7 @@ class TwoWayCouplingEnv(Env):
         device: str,
         n_steps: int,
         dt: float,
+        use_g_reward: bool,
         domain_size: Tuple[int, int],
         destination_margins: Tuple[int, int],
         re: float,
@@ -54,6 +55,7 @@ class TwoWayCouplingEnv(Env):
             path=sim_import_path
         )
         self.dt = dt
+        self.use_g_reward = use_g_reward
         self.destination_margins = destination_margins
         self.domain_size = domain_size
         self.re = re
@@ -97,6 +99,11 @@ class TwoWayCouplingEnv(Env):
 
         self.observation_space = self._get_observation_space()
         self.action_space = self._get_action_space()
+
+        if self.use_g_reward:
+            print('\033[33mUsing G reward function\033[0m')
+        else:
+            print('\033[33mUsing LOVE reward function\033[0m')
 
     def reset(self) -> np.ndarray:
         self.step_idx = 0
@@ -237,7 +244,7 @@ class TwoWayCouplingEnv(Env):
             rew += 9
 
         #rew = np.max([rew, -30])
-        return rew
+        return np.array(rew)
 
     def _love_rew(self, loss_inputs: dict, done: bool, baseline: Optional[np.ndarray]=None) -> np.ndarray:
         loss, _ = calculate_loss(loss_inputs, self.hyperparams, self.translation_only)
@@ -249,7 +256,10 @@ class TwoWayCouplingEnv(Env):
         return rew.cpu().numpy()
 
     def _get_rew(self, loss_inputs: dict, done: bool, baseline: Optional[np.ndarray]=None) -> np.ndarray:
-        return self._love_rew(loss_inputs, done, baseline)
+        if self.use_g_reward:
+            return self._g_rew(loss_inputs, done, baseline)
+        else:
+            return self._love_rew(loss_inputs, done, baseline)
 
     def _obstacle_leaving_domain(self) -> bool:
         obstacle_center = self.sim.obstacle.geometry.center
@@ -285,6 +295,7 @@ class TwoWayCouplingConfigEnv(TwoWayCouplingEnv):
         export_stride = config.export_stride
 
         n_steps = config.rl['n_timesteps']
+        use_g_reward = config.rl['use_g_reward']
         destination_margins = np.array(config.rl['destinations_margins'])
         hyperparams = config.rl['loss_hyperparams']
         sim_import_path = config.rl['simulation_path']
@@ -321,6 +332,7 @@ class TwoWayCouplingConfigEnv(TwoWayCouplingEnv):
             device=device,
             n_steps=n_steps,
             dt=dt,
+            use_g_reward=use_g_reward,
             domain_size=domain_size,
             destination_margins=destination_margins,
             re=re,

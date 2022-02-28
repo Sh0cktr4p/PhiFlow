@@ -56,6 +56,7 @@
         "n_timesteps": 1000,
         "n_iterations": 300000,
         "model_export_stride": 20000,
+        "use_g_reward": true,
         "destinations_margins": [
             20,
             20
