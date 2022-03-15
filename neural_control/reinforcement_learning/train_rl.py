@@ -8,6 +8,8 @@ from stable_baselines3.common.monitor import Monitor
 from stable_baselines3.common.callbacks import CallbackList
 from stable_baselines3.common.vec_env.dummy_vec_env import DummyVecEnv
 from stable_baselines3.common.vec_env.subproc_vec_env import SubprocVecEnv
+from stable_baselines3.common.base_class import Schedule
+from stable_baselines3.common.utils import constant_fn
 
 from phi import math
 
@@ -17,7 +19,8 @@ from envs.two_way_coupling_env import TwoWayCouplingConfigEnv
 from envs.stack_observations_wrapper import StackObservations
 from envs.seed_on_reset_wrapper import SeedOnResetWrapper
 from extract_model import store_sac_actor_as_torch_module
-from callbacks import EveryNTimestepsPlusStartFinishFunctionCallback
+from callbacks import EveryNTimestepsFunctionCallback, EveryNTimestepsPlusStartFinishFunctionCallback
+from lr_schedule import exponential_schedule
 
 
 CONFIG_FILENAME = 'inputs.json'
@@ -36,16 +39,27 @@ def create_ref_vars(inp: InputsManager) -> dict:
         ang_velocity=inp.simulation['reference_velocity'] / inp.simulation['obs_width']
     ) 
 
+def get_lr(inp: InputsManager) -> Schedule:
+    if inp.rl['use_lr_decay']:
+        print('\033[33mUsing learning rate decay\033[0m')
+        return exponential_schedule(inp.rl['initial_lr'], inp.rl['final_lr'])
+    else:
+        print('\033[33mUsing fixed learning rate\033[0m')
+        return constant_fn(inp.rl['initial_lr'])
+
+
 def get_env(config_path: str, env_count: int) -> Env:
-    def get_env():
-        env = TwoWayCouplingConfigEnv(config_path)
-        env = StackObservations(env, n_present_features=4, n_past_features=4, past_window=2, append_past_actions=True)
-        env = SeedOnResetWrapper(env)
-        env = Monitor(env)
-        return env
+    def get_env_fn(index: int):
+        def env_fn():
+            env = TwoWayCouplingConfigEnv(config_path)
+            env = StackObservations(env, n_present_features=4, n_past_features=4, past_window=2, append_past_actions=True)
+            env = SeedOnResetWrapper(env, index * 10000)
+            env = Monitor(env)
+            return env
+        return env_fn
     
     #venv = DummyVecEnv([get_env for _ in range(4)])
-    venv = SubprocVecEnv([get_env for _ in range(env_count)])
+    venv = SubprocVecEnv([get_env_fn(i) for i in range(env_count)])
 
     print('Observation space shape: %s' % str(venv.observation_space.shape))
     return venv
@@ -70,7 +84,7 @@ def train_model(path_to_model_folder: str, log_path: str, num_envs: int):
     name = os.path.basename(path_to_model_folder)
     config_path = os.path.join(path_to_model_folder, CONFIG_FILENAME)
     agent_path = os.path.join(path_to_model_folder, AGENT_FILENAME)
-    torch_module_path = os.path.join(path_to_model_folder, TORCH_MODEL_FILENAME_TEMPLATE % 0)
+    torch_module_path_template = os.path.join(path_to_model_folder, TORCH_MODEL_FILENAME_TEMPLATE)
 
     assert os.path.exists(path_to_model_folder)
     assert os.path.exists(config_path)
@@ -78,15 +92,15 @@ def train_model(path_to_model_folder: str, log_path: str, num_envs: int):
 
     inp = InputsManager(config_path)
     env = get_env(config_path, num_envs)
-    agent = SAC('MlpPolicy', env, tensorboard_log=log_path, verbose=1, **inp.rl['training_params'])
+    agent = SAC('MlpPolicy', env, learning_rate=get_lr(inp) ,tensorboard_log=log_path, verbose=1, **inp.rl['training_params'])
     
-    def store_fn(_):
+    def store_fn(i):
         print('Storing agent...')
         agent.save(agent_path)
-        store_sac_actor_as_torch_module(agent_path, torch_module_path)
+        store_sac_actor_as_torch_module(agent_path, torch_module_path_template % i)
 
     callback = CallbackList([
-        EveryNTimestepsPlusStartFinishFunctionCallback(inp.rl['model_export_stride'], store_fn)
+        EveryNTimestepsFunctionCallback(inp.rl['model_export_stride'], store_fn)
     ])
 
     agent.learn(total_timesteps=inp.rl['n_iterations'], callback=callback, tb_log_name=name)
@@ -115,5 +129,5 @@ if __name__ == '__main__':
         print('\033[31mNo name specified, training in sandbox mode (no storing)\033[0m')
         inp = InputsManager(args.config)
         env = get_env(args.config, args.num_envs)
-        agent = SAC('MlpPolicy', env, verbose=1, **inp.rl['training_params'])
+        agent = SAC('MlpPolicy', env, learning_rate=get_lr(inp), verbose=1, **inp.rl['training_params'])
         agent.learn(total_timesteps=inp.rl['n_iterations'])

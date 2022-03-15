@@ -7,11 +7,14 @@
         "export_path": "/home/felix/Code/HiWi/Brener/PhiFlow/neural_control/storage/figures/",
         "dpi": 400
     },
-    "error_xy_g_rew_love_rew": {
+    "lr_test": {
         "runs": {
-            "G 1": "/home/felix/Documents/GuidedResearch/g_rew/",
-            "G 2": "/home/felix/Documents/GuidedResearch/G2/",
-            "LOVE": "/home/felix/Documents/GuidedResearch/LOVE/"
+            "Fixed LR 1": "/home/trost/guided_research/PhiFlow/neural_control/storage/networks/love_fixed_lr_3/",
+            "Fixed LR 2": "/home/trost/guided_research/PhiFlow/neural_control/storage/networks/love_fixed_lr_4/",
+            "Fixed LR 3": "/home/trost/guided_research/PhiFlow/neural_control/storage/networks/love_fixed_lr_5/",
+            "LR Decay 1": "/home/trost/guided_research/PhiFlow/neural_control/storage/networks/love_lr_decay_4/",
+            "LR Decay 2": "/home/trost/guided_research/PhiFlow/neural_control/storage/networks/love_lr_decay_5/",
+            "LR Decay 3": "/home/trost/guided_research/PhiFlow/neural_control/storage/networks/love_lr_decay_6/"
         },
         "test": "test1",
         "all_models": false,
