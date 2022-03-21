@@ -14,16 +14,16 @@ root = r"/home/trost/guided_research/PhiFlow/neural_control/storage/networks/"
 tests = [1]
 
 # Models indexes that will be considered
-models = [2, 4, 6, 8, 10]
+models = [4, 8, 12, 16, 20]
 
 # Folders of the models
 folders = [
-    'love_fixed_lr_3',
-    'love_fixed_lr_4',
-    'love_fixed_lr_5',
-    'love_lr_decay_4',
-    'love_lr_decay_5',
-    'love_lr_decay_6',
+    'love_fixed_lr_long',
+    #'love_fixed_lr_4',
+    #'love_fixed_lr_5',
+    'love_lr_decay_long',
+    #'love_lr_decay_5',
+    #'love_lr_decay_6',
 ]
 
 ss_i = 0.25
@@ -31,12 +31,12 @@ ss_i = 0.25
 # Labels that will be used in the plot
 # Key should be model folder and value should be the label
 labels = dict(
-    love_fixed_lr_3='fixed_1',
-    love_fixed_lr_4='fixed_2',
-    love_fixed_lr_5='fixed_3',
-    love_lr_decay_4='decay_1',
-    love_lr_decay_5='decay_2',
-    love_lr_decay_6='decay_3',
+    love_fixed_lr_long='fixed',
+    #love_fixed_lr_4='fixed_2',
+    #love_fixed_lr_5='fixed_3',
+    #love_lr_decay_4='decay_1',
+    #love_lr_decay_5='decay_2',
+    love_lr_decay_long='decay',
 )
 offsets = np.linspace(0, 1, len(folders) * len(models))
 offsets -= 0.5
@@ -123,7 +123,7 @@ fig.update_layout(legend_title_text="")
 
 
 # Export to pdf
-go.Figure().write_image(f'/home/trost/guided_research/PhiFlow/neural_control/storage/figures/training_comparison.pdf')
+go.Figure().write_image(f'/home/trost/guided_research/PhiFlow/neural_control/storage/figures/training_comparison_long.pdf')
 fig.show()
-fig.write_image(f'/home/trost/guided_research/PhiFlow/neural_control/storage/figures/training_comparison.pdf')
+fig.write_image(f'/home/trost/guided_research/PhiFlow/neural_control/storage/figures/training_comparison_long.pdf')
 print('Done')
