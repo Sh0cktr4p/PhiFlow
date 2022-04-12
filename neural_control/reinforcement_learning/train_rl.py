@@ -15,6 +15,7 @@ from phi import math
 
 from neural_control.InputsManager import InputsManager
 
+from envs.skip_env_wrapper import SkipEnv
 from envs.two_way_coupling_env import TwoWayCouplingConfigEnv
 from envs.stack_observations_wrapper import StackObservations
 from envs.seed_on_reset_wrapper import SeedOnResetWrapper
@@ -49,10 +50,14 @@ def get_lr(inp: InputsManager) -> Schedule:
 
 
 def get_env(config_path: str, env_count: int) -> Env:
+    inp = InputsManager(config_path)
+
     def get_env_fn(index: int):
         def env_fn():
             env = TwoWayCouplingConfigEnv(config_path)
-            env = StackObservations(env, n_present_features=4, n_past_features=4, past_window=2, append_past_actions=True)
+            env = StackObservations(env, n_present_features=4, n_past_features=4, past_window=2, append_past_actions=False)
+            if inp.rl['model_evaluation_stride'] > 0:
+                env = SkipEnv(env, inp.rl['model_evaluation_stride'])
             env = SeedOnResetWrapper(env, index * 10000)
             env = Monitor(env)
             return env

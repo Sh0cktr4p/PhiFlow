@@ -3,7 +3,7 @@ import numpy as np
 import torch
 from neural_control.InputsManager import InputsManager
 
-from .TwoWayCouplingSimulation import TwoWayCouplingSimulation
+from neural_control.misc.TwoWayCouplingSimulation import TwoWayCouplingSimulation
 
 if __name__ == "__main__":
     export_vars = [
@@ -22,7 +22,7 @@ if __name__ == "__main__":
         "obs2_ang_vel"
     ]
     simulation = TwoWayCouplingSimulation("GPU")
-    inp = InputsManager(os.path.dirname(os.path.abspath(__file__)) + "/../inputs.json", 'simulation')
+    inp = InputsManager(os.path.dirname(os.path.abspath(__file__)) + "/../smoke_inputs.json", ['simulation'])
     inp.calculate_properties()
     initial_i = simulation.set_initial_conditions(
         inp.simulation['obs_type'],

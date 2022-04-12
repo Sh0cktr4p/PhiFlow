@@ -22,6 +22,7 @@ if __name__ == "__main__":
     tests_id = [f"test{i}" for i in args.tests_id]
     # Load inputs
     inp = InputsManager(os.path.abspath(run_path + "/inputs.json"))
+    inp.calculate_properties()
     # Set model type
     if "online" in inp.__dict__.keys(): model_type = "online"
     elif "supervised" in inp.__dict__.keys(): model_type = "supervised"
@@ -161,7 +162,10 @@ if __name__ == "__main__":
                             angle_tensor = -(sim.obstacle.geometry.angle - math.PI / 2.0).native()
                             control_force_global = rotate(control_force_global, angle_tensor)
                             control_torque = control_effort[0, -1:]
-                        nn_inputs_past = update_inputs(nn_inputs_past, nn_inputs_present, control_effort)
+                        if inp.n_present_features == inp.n_past_features:
+                            nn_inputs_past = update_inputs(nn_inputs_past, nn_inputs_present)
+                        else:
+                            nn_inputs_past = update_inputs(nn_inputs_past, nn_inputs_present, control_effort)
                     # Stop simulation if obstacle escapes domain
                     if math.any(sim.obstacle.geometry.center > inp.simulation['domain_size']) or math.any(sim.obstacle.geometry.center < (0, 0)):
                         print('Obstacle escaped domain!')

@@ -180,6 +180,7 @@ def execute(run_path, metrics_keys=None, tests=None, rotation_metrics=True):
     # Loop through tests and calculate metrics
     for test in tests:
         datapath = f"{run_path}/tests/{test}/data/"
+        print(f"Calculate Metrics for test {test}")
         # Get files cases
         all_files = [d for d in os.listdir(os.path.abspath(f"{datapath}/error_x/")) if d != '.directory']
         all_files = [file.split("error_x")[1] for file in all_files]  # Remove prefix

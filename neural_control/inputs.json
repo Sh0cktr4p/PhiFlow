@@ -54,12 +54,13 @@
         "simulation_path": "/home/trost/guided_research/PhiFlow/neural_control/storage/simulation_data/simple_simulation_3",
         "export_path": "",
         "n_timesteps": 1000,
-        "n_iterations": 300001,
-        "model_export_stride": 60000,
+        "n_iterations": 250001,
+        "model_export_stride": 25000,
         "use_lr_decay": false,
         "initial_lr": 4e-4,
         "final_lr": 4e-4,
         "use_g_reward": false,
+        "model_evaluation_stride": 8,
         "destinations_margins": [
             20,
             20

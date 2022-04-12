@@ -22,10 +22,19 @@ def update_inputs(past_inputs: torch.Tensor, present_inputs: torch.Tensor, *cont
         new_past_inputs: updated past inputs
 
     """
-    new_past_inputs = torch.cat((
-        past_inputs[1:, :, :],
-        torch.cat((present_inputs.view(-1), torch.cat(control_effort).view(-1))).view(1, 1, -1)),
-        dim=0)
+    add_past_inputs=present_inputs.view(-1)
+
+    if len(control_effort) > 0:
+        add_past_inputs=torch.cat((add_past_inputs, torch.cat(control_effort).view(-1)))
+
+    new_past_inputs = torch.cat(
+        (
+            past_inputs[1:, :, :],
+            add_past_inputs.view(1, 1, -1),
+        ),
+        dim=0,
+    )
+
     return new_past_inputs
 
 

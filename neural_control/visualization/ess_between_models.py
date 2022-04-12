@@ -14,14 +14,23 @@ root = r"/home/trost/guided_research/PhiFlow/neural_control/storage/networks/"
 tests = [1]
 
 # Models indexes that will be considered
-models = [4, 8, 12, 16, 20]
+models = [2, 4, 6, 8, 10, 12, 14, 16, 18, 20]
+iterations = [m * 25 for m in models]
 
 # Folders of the models
 folders = [
-    'love_fixed_lr_long',
+    'g_2',
+    'g_3',
+    'g_4',
+    'l_1',
+    'l_2',
+    'l_3',
+    'l_4',
+    'skippy',
+    'skippy_2',
     #'love_fixed_lr_4',
     #'love_fixed_lr_5',
-    'love_lr_decay_long',
+    #'love_lr_decay_long',
     #'love_lr_decay_5',
     #'love_lr_decay_6',
 ]
@@ -31,12 +40,20 @@ ss_i = 0.25
 # Labels that will be used in the plot
 # Key should be model folder and value should be the label
 labels = dict(
-    love_fixed_lr_long='fixed',
+    g_2="g 1",
+    g_3="g 2",
+    g_4="g 3",
+    l_1="love 1",
+    l_2="love 2",
+    l_3="love 3",
+    l_4="love 4",
+    skippy="every 4th",
+    skippy_2="every 8th"
     #love_fixed_lr_4='fixed_2',
     #love_fixed_lr_5='fixed_3',
     #love_lr_decay_4='decay_1',
     #love_lr_decay_5='decay_2',
-    love_lr_decay_long='decay',
+    #love_lr_decay_long='decay',
 )
 offsets = np.linspace(0, 1, len(folders) * len(models))
 offsets -= 0.5
@@ -48,7 +65,7 @@ export_values = defaultdict(dict)
 
 df = pd.DataFrame(columns=['test', 'model', 'folder', 'error_xy', 'std_xy', 'mean_xy'])
 
-for folder in folders:
+for folder_index, folder in enumerate(folders):
     for test in tests:
         for model in models:
             # Load metrics
@@ -115,15 +132,16 @@ fig.update_layout(xaxis=dict(showgrid=True),
                   )
 
 # Set every xticks
-fig.update_xaxes(tickmode="array", tickvals=models, ticktext=[model * 10 for model in models])
+print([m * 25 for m in models])
+fig.update_xaxes(tickmode="array", tickvals=models, ticktext=iterations)
 # Set titles
-fig.update_layout(xaxis_title=r"% of training", yaxis_title=r"$\overline{\|e_{xy}\|}_{ss}$")
+fig.update_layout(xaxis_title=r"number of iterations (x1000)", yaxis_title=r"$\overline{\|e_{xy}\|}_{ss}$")
 # Hide legends title
 fig.update_layout(legend_title_text="")
 
 
 # Export to pdf
-go.Figure().write_image(f'/home/trost/guided_research/PhiFlow/neural_control/storage/figures/training_comparison_long.pdf')
+go.Figure().write_image(f'/home/trost/guided_research/PhiFlow/neural_control/storage/figures/skippy.pdf')
 fig.show()
-fig.write_image(f'/home/trost/guided_research/PhiFlow/neural_control/storage/figures/training_comparison_long.pdf')
+fig.write_image(f'/home/trost/guided_research/PhiFlow/neural_control/storage/figures/skippy.pdf')
 print('Done')

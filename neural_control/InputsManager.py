@@ -48,7 +48,8 @@ class InputsManager():
             # self.simulation['obs_inertia'] = 1 / 12.0 * (self.simulation['obs_width'] ** 2 + self.simulation['obs_height'] ** 2) * self.simulation['obs_mass']  # Box's moment of inertia
             self.simulation['obs_inertia'] = 4000  # To ensure numerical stability
             self.simulation['domain_size'] = np.array(self.simulation['domain_size'])
-        except:
+        except Exception as e:
+            print(e)
             print('Simulation properties were not calculated')
             pass
         try:
