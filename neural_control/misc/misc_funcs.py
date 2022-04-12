@@ -2,7 +2,6 @@ import os
 from collections import OrderedDict, defaultdict
 from typing import Iterable, Tuple
 import torch
-
 from phi.torch.flow import *
 
 from .TwoWayCouplingSimulation import *
@@ -41,7 +40,6 @@ def update_inputs(past_inputs: torch.Tensor, present_inputs: torch.Tensor, *cont
 def extract_inputs(
     vars: list,
     sim: TwoWayCouplingSimulation,
-    probes: Probes,
     x_objective: tuple,
     angle_objective: tuple,
     ref_vars: dict = None,
@@ -54,7 +52,6 @@ def extract_inputs(
     Params:
         vars: list of variables that will be used for extracting inputs
         sim: simulation object
-        probes: probes manager
         x_objective : final destination in xy space
         angle_objective: angle that the box should go to
         ref_vars: reference variables for non dimensionalizing/normalizing inputs
@@ -69,8 +66,6 @@ def extract_inputs(
 
     if not ref_vars: ref_vars = defaultdict(lambda: 1)
     getter = dict(
-        probes_vx=lambda: sim.velocity.x.sample_at(probes.get_points_as_tensor()).native(),
-        probes_vy=lambda: sim.velocity.y.sample_at(probes.get_points_as_tensor()).native(),
         obs_vx=lambda: sim.obstacle.velocity.native()[0].view(1),
         obs_vy=lambda: sim.obstacle.velocity.native()[1].view(1),
         error_x=lambda: (x_objective[0] - sim.obstacle.geometry.center[0]).native().view(1),
@@ -85,8 +80,6 @@ def extract_inputs(
         control_torque=lambda: None,
     )
     ref_vars_hash = dict(
-        probes_vx="velocity",
-        probes_vy="velocity",
         obs_vx="velocity",
         obs_vy="velocity",
         error_x="length",
@@ -190,7 +183,6 @@ def calculate_loss(loss_inputs: math.Tensor, hyperparams: dict, translation_only
         ang_vel_term = hyperparams['ang_velocity'] * torch.sum(angular_velocity**2 / (error_ang**2 * hyperparams['proximity'] + 1))
         torque_term = hyperparams['torque'] * torch.sum(torque**2)
         dtorque_term = hyperparams['delta_torque'] * torch.sum(delta_torque**2)
-        # force2_term = hyperparams['delta_force'] * torch.sum(delta_force2**2)  # TODO
     else:
         ang_term = ang_vel_term = dtorque_term = torque_term = torch.tensor(0)
 
@@ -203,7 +195,6 @@ def calculate_loss(loss_inputs: math.Tensor, hyperparams: dict, translation_only
         dforce_term +
         force_term +
         torque_term
-        # + force2_term)
     ) / error_xy.shape[0]  # Take mean over rollouts
 
     loss_terms = dict(
@@ -211,9 +202,6 @@ def calculate_loss(loss_inputs: math.Tensor, hyperparams: dict, translation_only
         velocity=velocity_term,
         ang=ang_term,
         ang_vel=ang_vel_term,
-        # force=force_term,
-        # torque=torque_term
-        # force2=force2_term  # TODO
     )
     return loss, loss_terms
 

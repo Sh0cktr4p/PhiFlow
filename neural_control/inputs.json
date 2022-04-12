@@ -6,13 +6,9 @@
     "export_stride": 8,
     "max_acc": 1.0,
     "max_vel": 3.0,
-    "max_ang_acc": 0.025,
+    "max_ang_acc": 0.05,
     "max_ang_vel": 0.75,
     "device": "GPU",
-    "probes_n_rows": 2,
-    "probes_n_columns": 3,
-    "probes_offset": 4,
-    "probes_size": 4,
     "bypass_tanh": false,
     "nn_vars": [
         "obs_vx",
@@ -22,17 +18,17 @@
         "control_force_x",
         "control_force_y"
     ],
-    "online": {
-        "simulation_path": "simple_simulation_3/", 
+    "unsupervised": {
+        "simulation_path": "/home/ramos/phiflow/storage/baseline_disc/",
         "export_path": "brener_setup_more_power_long_eps_3/",
         "destinations_zone_growrate": 0.33,
-        "n_timesteps": 1000,
         "simulation_dropout": 1.0,
-        "lr_half_life": 1000,
-        "n_iterations": 5001,
-        "learning_rate": 0.01,
-        "n_before_backprop": 16,
-        "model_export_stride": 500,
+        "n_timesteps": 1000,
+        "lr_half_life": 1500,
+        "n_iterations": 15001,
+        "model_export_stride": 1500,
+        "learning_rate": 0.0005,
+        "n_before_backprop": 8,
         "optimizer": "AdamW",
         "destinations_margins": [
             20,
@@ -90,16 +86,16 @@
         }
     },
     "supervised": {
-        "n_iterations": 150001,
-        "lr_half_life": 15000,
-        "initial_conditions_path": "/home/felix/Code/HiWi/Brener/PhiFlow/neural_control/storage/simulation_data/simple_simulation_2/",
+        "n_iterations": 5001,
+        "lr_half_life": 500,
+        "initial_conditions_path": "/home/ramos/phiflow/storage/baseline_disc/",
         "learning_rate": 0.01,
-        "dataset_path": "/home/ramos/phiflow/storage/dataset_simple_noinflow/",
+        "dataset_path": "/home/ramos/phiflow/storage/dataset_disc/",
         "dataset_n_steps": 500,
-        "model_export_stride": 20000,
+        "model_export_stride": 500,
         "n_simulations": 100,
         "optimizer": "AdamW",
-        "local_coordinates": true,
+        "local_coordinates": false,
         "destinations_margins": [
             20,
             20
@@ -110,7 +106,7 @@
             0.0
         ],
         "dataloader_params": {
-            "batch_size": 15,
+            "batch_size": 30,
             "shuffle": true,
             "num_workers": 7
         }
@@ -146,16 +142,13 @@
     },
     "controller": {
         "ls_coeffs": [
-            "/home/ramos/phiflow/neural_control/controller_design/ls_coeffs_box_xy.json",
-            "/home/ramos/phiflow/neural_control/controller_design/ls_coeffs_box_angle.json"
+            "/home/ramos/phiflow/neural_control/controller_design/ls_coeffs_disc.json"
         ],
         "pid_coeffs": [
-            "/home/ramos/phiflow/neural_control/controller_design/gains_pid_box_xy.json",
-            "/home/ramos/phiflow/neural_control/controller_design/gains_pid_box_angle.json"
+            "/home/ramos/phiflow/neural_control/controller_design/gains_pid_disc.json"
         ],
         "clamp_values": [
-            20,
-            0.5
+            20
         ]
     },
     "export_vars": [
