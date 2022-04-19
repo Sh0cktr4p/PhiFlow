@@ -28,6 +28,7 @@ folders = [
     'l_4',
     'skippy',
     'skippy_2',
+    'skippy_3',
     #'love_fixed_lr_4',
     #'love_fixed_lr_5',
     #'love_lr_decay_long',
@@ -48,7 +49,8 @@ labels = dict(
     l_3="love 3",
     l_4="love 4",
     skippy="every 4th",
-    skippy_2="every 8th"
+    skippy_2="every 8th 1",
+    skippy_3="every 8th 2",
     #love_fixed_lr_4='fixed_2',
     #love_fixed_lr_5='fixed_3',
     #love_lr_decay_4='decay_1',

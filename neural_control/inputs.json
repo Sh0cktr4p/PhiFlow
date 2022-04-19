@@ -14,9 +14,7 @@
         "obs_vx",
         "obs_vy",
         "error_x",
-        "error_y",
-        "control_force_x",
-        "control_force_y"
+        "error_y"
     ],
     "unsupervised": {
         "simulation_path": "/home/ramos/phiflow/storage/baseline_disc/",
@@ -55,7 +53,7 @@
         "use_lr_decay": false,
         "initial_lr": 4e-4,
         "final_lr": 4e-4,
-        "use_g_reward": false,
+        "use_g_reward": true,
         "model_evaluation_stride": 8,
         "destinations_margins": [
             20,

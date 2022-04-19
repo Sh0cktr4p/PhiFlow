@@ -34,7 +34,7 @@ def store_sac_actor_as_torch_module(agent_path: str, target_path: str):
     sb_actor = sb_agent.policy.actor.cpu()
 
     th_actor = SACActorModule(sb_actor.latent_pi, sb_actor.mu, sb_agent.action_space.low, sb_agent.action_space.high, sb_agent.observation_space.shape)
-    torch.save(th_actor, target_path)
+    torch.save(th_actor.state_dict(), target_path)
 
 
 def load_sac_torch_module(path: str) -> SACActorModule:

@@ -10,7 +10,7 @@ from phi import math
 
 from neural_control.InputsManager import InputsManager
 from neural_control.misc.TwoWayCouplingSimulation import TwoWayCouplingSimulation
-from neural_control.misc.misc_funcs import calculate_loss, extract_inputs, Probes, prepare_export_folder, rotate
+from neural_control.misc.misc_funcs import calculate_loss, extract_inputs, prepare_export_folder, rotate
 
 
 class TwoWayCouplingEnv(Env):
@@ -34,10 +34,6 @@ class TwoWayCouplingEnv(Env):
         sponge_size: List[int],
         inflow_on: bool,
         inflow_velocity: float,
-        probes_offset: float, 
-        probes_size: float,
-        probes_n_rows: int,
-        probes_n_columns: int,
         sim_import_path: str,
         sim_export_path: str,
         export_vars: List[str],
@@ -69,15 +65,6 @@ class TwoWayCouplingEnv(Env):
         self.hyperparams = hyperparams
         self.inflow_on = inflow_on
         self.inflow_velocity = inflow_velocity
-
-        self.probes = Probes(
-            width_inner=obs_width / 2 + probes_offset,
-            height_inner=obs_height / 2 + probes_offset,
-            size=probes_size,
-            n_rows=probes_n_rows,
-            n_columns=probes_n_columns,
-            center=obs_xy,
-        )
 
         self.n_steps = n_steps
         self.step_idx = 0
@@ -136,7 +123,6 @@ class TwoWayCouplingEnv(Env):
         self.sim.apply_forces(self.forces * self.ref_vars['force'], self.torque * self.ref_vars['torque'])
         self.sim.advect()
         self.sim.make_incompressible()
-        self.probes.update_transform(self.sim.obstacle.geometry.center.numpy(), -1 * self._obstacle_angle.numpy())
         self.sim.calculate_fluid_forces()
         obs, loss_inputs = self._extract_inputs()
         done = self._obstacle_leaving_domain() or self.step_idx == self.n_steps
@@ -167,10 +153,6 @@ class TwoWayCouplingEnv(Env):
             prepare_export_folder(self.sim_export_path, self.step_idx)
             self.export_folder_created = True
         
-        probes_points = self.probes.get_points_as_tensor()
-        self.sim.probes_points = probes_points.native().detach()
-        self.sim.probes_vx = self.sim.velocity.x.sample_at(probes_points).native().detach()
-        self.sim.probes_vy = self.sim.velocity.y.sample_at(probes_points).native().detach()
         self.sim.control_force_x, self.sim.control_force_y = self.forces.detach().clone() * self.ref_vars['force']
         self.sim.control_torque = self.torque.detach().clone() * self.ref_vars['torque']
         self.sim.reference_x = self.pos_objective[0].detach().clone()
@@ -216,7 +198,7 @@ class TwoWayCouplingEnv(Env):
 
     def _extract_inputs(self) -> Tuple[np.ndarray, dict]:
         current_input_vars = [var for var in self.input_vars if 'control' not in var]
-        obs, loss_inputs = extract_inputs(self.input_vars, self.sim, self.probes, self.pos_objective, self.ang_objective, self.ref_vars, self.translation_only)
+        obs, loss_inputs = extract_inputs(self.input_vars, self.sim, self.pos_objective, self.ang_objective, self.ref_vars, self.translation_only)
 
         if self.forces is not None:
             forces = self.forces.detach().clone()
@@ -287,10 +269,6 @@ class TwoWayCouplingConfigEnv(TwoWayCouplingEnv):
         max_acc = config.max_acc
         max_ang_acc = config.max_ang_acc
         translation_only = config.translation_only
-        probes_offset = config.probes_offset
-        probes_size = config.probes_size
-        probes_n_rows = config.probes_n_rows
-        probes_n_columns = config.probes_n_columns
         export_vars = config.export_vars
         export_stride = config.export_stride
 
@@ -347,10 +325,6 @@ class TwoWayCouplingConfigEnv(TwoWayCouplingEnv):
             sponge_size=sponge_size,
             inflow_on=inflow_on,
             inflow_velocity=inflow_velocity,
-            probes_offset=probes_offset,
-            probes_size=probes_size,
-            probes_n_rows=probes_n_rows,
-            probes_n_columns=probes_n_columns,
             sim_import_path=sim_import_path,
             sim_export_path=sim_export_path,
             export_vars=export_vars,

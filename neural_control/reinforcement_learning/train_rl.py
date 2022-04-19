@@ -26,7 +26,7 @@ from lr_schedule import exponential_schedule
 
 CONFIG_FILENAME = 'inputs.json'
 AGENT_FILENAME = 'agent.zip'
-TORCH_MODEL_FILENAME_TEMPLATE = 'trained_model_%04i.pth'
+TORCH_MODEL_FILENAME_TEMPLATE = 'trained_model_%04i.pt'
 
 
 def create_ref_vars(inp: InputsManager) -> dict:

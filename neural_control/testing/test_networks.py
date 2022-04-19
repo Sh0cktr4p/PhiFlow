@@ -74,13 +74,16 @@ if __name__ == "__main__":
         #assert sampling_stride.is_integer() # TODO
         # Load model
         if model_type == "rl":
+            print(f"{inp.n_present_features} vs {inp.n_past_features}")
+            obs_dim = 12 if inp.n_past_features == inp.n_present_features else 16
+            print(f"Obs dim: {obs_dim}")
             latent_pi = torch.nn.Sequential(
-                torch.nn.Linear(16, 38),
+                torch.nn.Linear(obs_dim, 38),
                 torch.nn.ReLU(),
                 torch.nn.Linear(38, 38),
                 torch.nn.ReLU())
             mu = torch.nn.Linear(38, 2)
-            model = SACActorModule(latent_pi, mu, 0, 0, (16,)).to(device)
+            model = SACActorModule(latent_pi, mu, 0, 0, (obs_dim,)).to(device)
         else:
             model = NeuralController(
                 f"{inp.architecture}{inp.past_window}",
