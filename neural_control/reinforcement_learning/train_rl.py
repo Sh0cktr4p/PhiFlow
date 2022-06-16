@@ -114,16 +114,17 @@ def train_model(path_to_model_folder: str, log_path: str, num_envs: int):
 if __name__ == '__main__':
     base_directory = os.path.join(os.path.dirname(__file__), os.pardir)
     base_storage_directory = os.path.join(base_directory, 'storage')
-    default_config_path = os.path.join(base_directory, 'inputs.json')
-    default_model_storage_path = os.path.join(base_storage_directory, 'networks')
-    default_log_storage_path = os.path.join(base_storage_directory, 'tensorboard', 'simple_env')
+    default_config_path = os.path.normpath(os.path.join(base_directory, 'inputs.json'))
+    default_model_storage_path = os.path.normpath(os.path.join(base_storage_directory, 'networks'))
+    default_log_storage_path = os.path.normpath(os.path.join(base_storage_directory, 'tensorboard', 'simple_env'))
+    default_num_envs = 4
 
     parser = ArgumentParser()
     parser.add_argument('-n', '--name', dest='name', type=str, help='model name, no storing if not specified')
-    parser.add_argument('-c', '--config', dest='config', type=str, default=default_config_path, help='path to config file')
-    parser.add_argument('-p', '--path', dest='path', type=str, default=default_model_storage_path, help='path to model storage folder')
-    parser.add_argument('-l', '--log', dest='log', type=str, default=default_log_storage_path, help='path to tensorboard logs')
-    parser.add_argument('-x', '--num_envs', dest='num_envs', type=int, default=4, help='number of parallel environments for multiprocessing')
+    parser.add_argument('-c', '--config', dest='config', type=str, default=default_config_path, help=f'path to inputs.json file, default {os.path.abspath(default_config_path)}')
+    parser.add_argument('-p', '--path', dest='path', type=str, default=default_model_storage_path, help=f'path to model storage folder, default {os.path.abspath(default_model_storage_path)}')
+    parser.add_argument('-l', '--log', dest='log', type=str, default=default_log_storage_path, help=f'path to tensorboard logs, default {os.path.abspath(default_log_storage_path)}')
+    parser.add_argument('-x', '--num_envs', dest='num_envs', type=int, default=default_num_envs, help=f'number of parallel environments for multiprocessing, default {default_num_envs}')
 
     args = parser.parse_args()
 

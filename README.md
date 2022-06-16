@@ -38,11 +38,18 @@ Simulations used as initial conditions are performed by executing
 ```
 python neural_control/misc/generate_ic.py
 ```
-Inputs necessary for generating initial conditions for training and test environments can be found in the "simulation" section of *inputs.json*. All initial conditions used in our paper can be found on *storage/ics/*.
+Inputs necessary for generating initial conditions for training and test environments can be found in the "simulation" section of *inputs.json*. All initial conditions used in our paper can be found on *neural_control/storage/ics/*.
 # Training
 Training neural networks as controllers using the differentiable simulator is achieved by executing
 ```
-python neural_control/neural_networks/train_unsupervised.py path/to/storage/folder/
+python neural_control/reinforcement_learning/train_rl.py -n experiment_name 
+```
+
+When the -n argument is left out, models and logs are not stored. This can be helpful for testing purposes.
+Additional arguments for this command are shown by executing
+
+```
+python neural_control/reinforcement_learning/train_rl.py -h
 ```
 
 The network is trained by minimizing the following loss function
@@ -62,7 +69,7 @@ where $e$ represent errors, $\dot{x}$ and $\dot{\alpha}$ velocities and $F_c$ an
 
 Intermediate models are saved during training before all iterations are performed as *trained_model_####.pt*, where #### is a model index.
 
-All parameters for training are set in *inputs.json*, especially in the "unsupervised" session.
+All parameters for training are set in *inputs.json*, especially in the "rl" section.
 
 # Tests
 Before running the tests, it is necessary to generate the *tests.json* that contains all tests parameters by running

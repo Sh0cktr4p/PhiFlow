@@ -57,7 +57,7 @@
         "use_lr_decay": false,
         "initial_lr": 4e-4,
         "final_lr": 4e-4,
-        "use_g_reward": true,
+        "use_g_reward": false,
         "model_evaluation_stride": 8,
         "destinations_margins": [
             20,
