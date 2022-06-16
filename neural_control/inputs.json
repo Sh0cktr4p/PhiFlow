@@ -49,7 +49,7 @@
         }
     },
     "rl": {
-        "simulation_path": "F:\\Code\\Python\\Guided Research\\PhiFlow\\neural_control\\storage\\simulation_data\\simple_simulation\\",
+        "simulation_path": "F:\\Code\\Python\\Guided Research\\PhiFlow\\neural_control\\storage\\ics\\In3\\",
         "export_path": "",
         "n_timesteps": 1000,
         "n_iterations": 250001,

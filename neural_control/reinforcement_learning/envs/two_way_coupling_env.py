@@ -279,19 +279,20 @@ class TwoWayCouplingConfigEnv(TwoWayCouplingEnv):
         sim_import_path = config.rl['simulation_path']
         sim_export_path = config.rl['export_path']
 
-        dt = config.simulation['dt']
-        domain_size = config.simulation['domain_size']
-        re = config.simulation['re']
-        obs_type = config.simulation['obs_type']
-        obs_width = config.simulation['obs_width']
-        obs_height = config.simulation['obs_height']
-        obs_xy = config.simulation['obs_xy']
-        obs_mass = config.simulation['obs_mass']
-        obs_inertia = config.simulation['obs_inertia']
-        sponge_intensity = config.simulation['sponge_intensity']
-        sponge_size = config.simulation['sponge_size']
-        inflow_on = config.simulation['inflow_on']
-        inflow_velocity = config.simulation['reference_velocity']
+        sim_config = InputsManager(os.path.join(sim_import_path, 'inputs.json'))
+        dt = sim_config.simulation['dt']
+        domain_size = sim_config.simulation['domain_size']
+        re = sim_config.simulation['re']
+        obs_type = sim_config.simulation['obs_type']
+        obs_width = sim_config.simulation['obs_width']
+        obs_height = sim_config.simulation['obs_height']
+        obs_xy = sim_config.simulation['obs_xy']
+        obs_mass = sim_config.simulation['obs_mass']
+        obs_inertia = sim_config.simulation['obs_inertia']
+        sponge_intensity = sim_config.simulation['sponge_intensity']
+        sponge_size = sim_config.simulation['sponge_size']
+        inflow_on = sim_config.simulation['inflow_on']
+        inflow_velocity = sim_config.simulation['reference_velocity']
 
         input_vars = config.nn_vars
         ref_vars = dict(
