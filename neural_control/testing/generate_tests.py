@@ -1,6 +1,5 @@
 from collections import defaultdict
 import os
-from supervised.Dataset import Dataset
 from turtle import position
 import numpy as np
 import json
