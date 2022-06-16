@@ -140,7 +140,8 @@ if __name__ == "__main__":
                         if i > objective_i:
                             x_objective = torch.tensor(x_objective_).to(device)
                             ang_objective = torch.tensor(ang_objective_).to(device)
-                    sim.apply_forces(control_force_global * ref_vars['force'], control_torque * ref_vars['torque'])
+                    add_forces = calculate_additional_forces(test_attrs.get('add_forces', {}), i).to(device)
+                    sim.apply_forces(control_force_global * ref_vars['force'] + add_forces, control_torque * ref_vars['torque'])
                     sim.advect()
                     sim.make_incompressible()
                     sim.calculate_fluid_forces()
@@ -181,6 +182,7 @@ if __name__ == "__main__":
                     sim.reference_x = x_objective[0].detach()
                     sim.reference_y = x_objective[1].detach()
                     sim.control_force_x, sim.control_force_y = control_force_global.detach() * ref_vars['force']
+                    sim.add_forces_x, sim.add_forces_y = add_forces.detach()
                     sim.error_x = loss_inputs['error_x'].detach() * ref_vars['length']
                     sim.error_y = loss_inputs['error_y'].detach() * ref_vars['length']
                     if not inp.translation_only:
@@ -198,8 +200,7 @@ if __name__ == "__main__":
                         remaining = i_remaining * delta
                         remaining_h = np.floor(remaining / 60. / 60.)
                         remaining_m = np.floor(remaining / 60. - remaining_h * 60.)
-                        #print(f"Time left: {remaining_h:.0f}h and {remaining_m:.0f} min - i: {i}")
-                    # export_vars = ['vorticity', 'obs_mask', 'obs_xy', 'control_force_x', 'control_force_y', 'fluid_force_x', 'fluid_force_y', 'reference_x', 'reference_y', 'error_x', 'error_y', ]
-                    sim.export_data(export_path, test_i, i, export_vars, is_first_export)
+                        print(f"Time left: {remaining_h:.0f}h and {remaining_m:.0f} min - i: {i}")
+                    sim.export_data(export_path, test_i, i, export_vars + ['add_forces_x', 'add_forces_y'], is_first_export)
                     is_first_export = False
     print("Done")

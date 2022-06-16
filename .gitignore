@@ -1,5 +1,7 @@
 myscripts/
-storage/
+storage/*
+!storage/ics/
+!storage/trained_models/
 phiflow2/*
 *.pyc
 *.tmp
@@ -30,4 +32,5 @@ neural_control/visualization/log.json
 *pdf
 *out
 *png
+!gui.png
 figs/
