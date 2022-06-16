@@ -5,7 +5,6 @@ import torch
 from phi.torch.flow import *
 
 from .TwoWayCouplingSimulation import *
-from .Probes import Probes
 
 
 def update_inputs(past_inputs: torch.Tensor, present_inputs: torch.Tensor, *control_effort: torch.Tensor) -> torch.tensor:

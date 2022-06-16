@@ -21,9 +21,9 @@ if __name__ == "__main__":
         "obs2_ang",
         "obs2_ang_vel"
     ]
-    simulation = TwoWayCouplingSimulation("GPU")
-    inp = InputsManager(os.path.dirname(os.path.abspath(__file__)) + "/../smoke_inputs.json", ['simulation'])
+    inp = InputsManager(os.path.dirname(os.path.abspath(__file__)) + "/../inputs.json", ['simulation'])
     inp.calculate_properties()
+    simulation = TwoWayCouplingSimulation(inp.device)
     initial_i = simulation.set_initial_conditions(
         inp.simulation['obs_type'],
         inp.simulation['obs_width'],
