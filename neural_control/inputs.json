@@ -1,5 +1,5 @@
 {
-    "translation_only": false,
+    "translation_only": true,
     "architecture": "fc_only",
     "past_window": 3,
     "resume_training": false,
@@ -15,11 +15,8 @@
         "obs_vy",
         "error_x",
         "error_y",
-        "obs_ang_vel",
-        "error_ang",
         "control_force_x",
-        "control_force_y",
-        "control_torque"
+        "control_force_y"
     ],
     "unsupervised": {
         "simulation_path": "/home/ramos/phiflow/storage/ics/training_3dof/",
@@ -49,7 +46,7 @@
         }
     },
     "rl": {
-        "simulation_path": "F:\\Code\\Python\\Guided Research\\PhiFlow\\neural_control\\storage\\ics\\In3\\",
+        "simulation_path": "F:\\Code\\Python\\Guided Research\\PhiFlow\\storage\\ics\\training_2dof\\",
         "export_path": "",
         "n_timesteps": 1000,
         "n_iterations": 250001,
@@ -114,7 +111,7 @@
         }
     },
     "simulation": {
-        "path": "F:\\Code\\Python\\Guided Research\\PhiFlow\\neural_control\\storage\\simulation_data\\simple_simulation\\",
+        "path": "F:\\Code\\Python\\Guided Research\\PhiFlow\\storage\\simulation_data\\simple_simulation\\",
         "n_steps": 501,
         "re": 1000,
         "tripping_on": false,
@@ -175,11 +172,6 @@
         "fluid_torque",
         "vorticity",
         "cfl",
-        "fluid_torque",
-        "control_torque",
-        "obs_ang",
-        "obs_ang_vel",
-        "reference_ang",
-        "error_ang"
+        "fluid_torque"
     ]
 }

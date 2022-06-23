@@ -144,8 +144,6 @@ setup(
               'webglviewer',
               'neural_control',
               'neural_control.misc',
-              'neural_control.online',
-              'neural_control.supervised',
               'neural_control.reinforcement_learning',
               'neural_control.testing',
               'neural_control.visualization',

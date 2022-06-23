@@ -197,19 +197,25 @@ class TwoWayCouplingEnv(Env):
         return Box(-np.inf, np.inf, shape=shape, dtype=np.float32)
 
     def _extract_inputs(self) -> Tuple[np.ndarray, dict]:
-        current_input_vars = [var for var in self.input_vars if 'control' not in var]
         obs, loss_inputs = extract_inputs(self.input_vars, self.sim, self.pos_objective, self.ang_objective, self.ref_vars, self.translation_only)
 
         if self.forces is not None:
             forces = self.forces.detach().clone()
         else:
-            forces = torch.zeros(4, device=self.sim.device)
+            forces = torch.zeros(2, device=self.sim.device)
 
         loss_inputs['control_force_x'] = forces[0:1]
         loss_inputs['control_force_y'] = forces[1:2]
         for dim in ['x', 'y']:
             loss_inputs[f'd_control_force_{dim}'] = loss_inputs[f"control_force_{dim}"]
-            
+        if not self.translation_only:
+            if self.torque is not None:
+                torque = self.torque.detach().clone()
+            else:
+                torque = torch.zeros(1, device=self.sim.device)
+            loss_inputs["control_torque"] = torque
+            loss_inputs["d_control_torque"] = loss_inputs["control_torque"]
+
         return obs.cpu().numpy().reshape(-1), loss_inputs
 
     def _get_obs(self) -> np.ndarray:

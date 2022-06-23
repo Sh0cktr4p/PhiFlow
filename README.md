@@ -19,7 +19,8 @@ conda install pytorch torchvision torchaudio cudatoolkit=10.2 -c pytorch
 
 Navigate to the folder you would like to use to store the code and clone this repository.
 ```
-git clone https://github.com/brenerrr/PhiFlow.git ./
+git clone https://github.com/Sh0cktr4p/PhiFlow.git ./
+git checkout two_way_coupling
 ```
 
 Lastly install all packages.
@@ -64,8 +65,14 @@ $$ E = \frac{\beta_F}{l}\sum_{n=0}^{l-1} \|F_c^n\|^2
     + \frac{\beta_T}{l}\sum_{n=0}^{l-1} \|T_c^n\|^2 +
       \frac{\beta_{\Delta F}}{l}\sum_{n=0}^{l-1} \|F_c^n-F_c^{n-1}\|^2
     + \frac{\beta_{\Delta T}}{l}\sum_{n=0}^{l-1} \|T_c^n-T_c^{n-1}\|^2 $$
-    
-where $e$ represent errors, $\dot{x}$ and $\dot{\alpha}$ velocities and $F_c$ and $T_c$ control efforts. $\beta$ are hyperparameters that weight the contribution of each term.
+
+where $\dot{x}$
+and $\dot{\alpha}$
+represent velocities,
+$e$ errors,
+and $F_c$
+and $T_c$
+control efforts. $\beta$ are hyperparameters that weigh the contribution of each term.
 
 Intermediate models are saved during training before all iterations are performed as *trained_model_####.pt*, where #### is a model index.
 

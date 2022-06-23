@@ -1,5 +1,4 @@
 import os
-import shutil
 from argparse import ArgumentParser
 
 from gym import Env
@@ -20,7 +19,7 @@ from envs.two_way_coupling_env import TwoWayCouplingConfigEnv
 from envs.stack_observations_wrapper import StackObservations
 from envs.seed_on_reset_wrapper import SeedOnResetWrapper
 from extract_model import store_sac_actor_as_torch_module
-from callbacks import EveryNTimestepsFunctionCallback, EveryNTimestepsPlusStartFinishFunctionCallback
+from callbacks import EveryNTimestepsFunctionCallback
 from lr_schedule import exponential_schedule
 
 
@@ -63,7 +62,7 @@ def get_env(config_path: str, env_count: int) -> Env:
             return env
         return env_fn
     
-    #venv = DummyVecEnv([get_env for _ in range(4)])
+    #venv = DummyVecEnv([get_env for _ in range(4)]) # Execute all environment instances on the same thread
     venv = SubprocVecEnv([get_env_fn(i) for i in range(env_count)])
 
     print('Observation space shape: %s' % str(venv.observation_space.shape))
@@ -113,7 +112,7 @@ def train_model(path_to_model_folder: str, log_path: str, num_envs: int):
 
 if __name__ == '__main__':
     base_directory = os.path.join(os.path.dirname(__file__), os.pardir)
-    base_storage_directory = os.path.join(base_directory, 'storage')
+    base_storage_directory = os.path.join(base_directory, os.pardir, 'storage')
     default_config_path = os.path.normpath(os.path.join(base_directory, 'inputs.json'))
     default_model_storage_path = os.path.normpath(os.path.join(base_storage_directory, 'networks'))
     default_log_storage_path = os.path.normpath(os.path.join(base_storage_directory, 'tensorboard', 'simple_env'))
